@@ -24,7 +24,8 @@
 <link rel="canonical" href="<?= $this->fullUrl ?>">
 
 
-<link rel="shortcut icon" href="<?= $assetURL ?>img/favicon.png">
+<link rel="icon" type="image/png" href="<?= $assetURL ?>img/favicon.png">
+
 <script type="application/ld+json">
     {
         "@context": "https://schema.org",
@@ -53,7 +54,16 @@
 
 <?php
 $this->inc_file("css", array(
-    "css/styles.css"
+    "css/bootstrap.min.css",
+    "css/swiper-bundle.min.css",
+    "css/scrollcue.min.css",
+    "css/remixicon.css",
+    "css/header.css",
+    "css/style.css",
+    "css/footer.css",
+    "css/responsive.css",
+    "css/dark-theme.css",
+
 ));
 ?>
 
@@ -69,191 +79,263 @@ $this->inc_file("script", array(
 
 
 <body class="lang_<?= $lang ?> <?= ($page == "index") ? "index" : "other" ?>">
+    <div class="preloader-area" id="preloader">
+        <div class="spinner">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
+    </div>
+    <div class="cursor"><span class="cursor-text"></span></div>
+    <div class="cursor-inner"></div>
 
-    <div class="page">
+    <div id="smooth-wrapper">
+        <div id="smooth-content">
+            <!-- <div class="page"> -->
 
+            <?= $content ?>
 
-        <?= $content ?>
+        </div>
+    </div>
 
+    <?php
+    $this->inc_file("script", array(
+        "js/bootstrap.bundle.min.js",
+        "js/megamenu.js",
+        "js/swiper-bundle.min.js",
+        "js/fslightbox.js",
+        "js/gsap.min.js",
+        "js/scrollTrigger.min.js",
+        "js/lenis.min.js",
+        "js/scrollToPlugin.js",
+        "js/SplitText.min.js",
+        "js/customEase.js",
+        "js/scrollcue.min.js",
+        "js/gsapTriggers.js",
+        "js/main.js",
+        "js/jquery-3.6.0.min.js",
+        "js/form.js",
+        "js/sweetalert2@11.js",
+    ));
+    ?>
+    <script>
+        //document.getElementById('mSize').textContent = btn.getAttribute('data-main-size');
 
+        document.addEventListener('DOMContentLoaded', function() {
+            const modalElement = document.getElementById('productModal');
+            const bsModal = new bootstrap.Modal(modalElement);
 
-        <?php
-        $this->inc_file("script", array(
-            "js/jquery-3.6.0.min.js",
-            "js/form.js",
-            "js/sweetalert2@11.js",
+            modalElement.addEventListener('show.bs.modal', function(e) {
+                let btn = e.relatedTarget;
 
-        ));
-        ?>
-
-
-
-
-        <script>
-            jQuery(document).ready(function($) {
-
-                if ($(".captcha_image").length) {
-                    $(".captcha_image").on("click", function() {
-                        $(this).attr("src", BaseURL + "ajax/getcaptchaimage.html?rnd=" + Math.random());
-                    });
+                if (!btn && window.location.hash) {
+                    const hash = decodeURIComponent(window.location.hash.substring(1));
+                    btn = document.querySelector(`.product_item_card[data-code="${hash}"]`);
                 }
 
-                if ($("form.iletisim-form").length) {
-                    $("form.iletisim-form").ajaxForm({
-                        swal: true,
-                        submitClass: ".cmt-btn",
-                        callback: function(obj, data) {
-                            if (data != 3) {
-                                $('.captcha_image').trigger("click");
-                            }
-                        }
-                    });
+                if (!btn) return;
+
+                const code = btn.getAttribute('data-code');
+                window.location.hash = code;
+
+                document.getElementById('mImg').src = btn.getAttribute('data-img');
+                document.getElementById('mCode').textContent = code;
+
+                const cols = JSON.parse(btn.getAttribute('data-columns'));
+                const rows = JSON.parse(btn.getAttribute('data-rows'));
+
+                const thead = document.getElementById('mHead');
+                thead.innerHTML = '<tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr>';
+
+                const tbody = document.getElementById('mBody');
+                tbody.innerHTML = rows.map(row =>
+                    `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`
+                ).join('');
+            });
+
+            modalElement.addEventListener('hidden.bs.modal', function() {
+                history.replaceState(null, null, ' ');
+            });
+
+            const currentHash = decodeURIComponent(window.location.hash.substring(1));
+            if (currentHash) {
+                const targetProduct = document.querySelector(`.product_item_card[data-code="${currentHash}"]`);
+                if (targetProduct) {
+                    bsModal.show(targetProduct);
                 }
-
-                if ($("form.test-ekipmani-destek-form").length) {
-                    $("form.test-ekipmani-destek-form").ajaxForm({
-                        swal: true,
-                        submitClass: ".test-btn",
-                        callback: function(obj, data) {
-                            if (data != 3) {
-                                $('.captcha_image').trigger("click");
-                            }
-                        }
-                    });
-                }
-                if ($("form.yedek-parca-destek-form").length) {
-                    $("form.yedek-parca-destek-form").ajaxForm({
-                        swal: true,
-                        submitClass: ".yedek-btn",
-                        callback: function(obj, data) {
-                            if (data != 3) {
-                                $('.captcha_image').trigger("click");
-                            }
-                        }
-                    });
-                }
-
-
-                if ($("form.basvuru-form").length) {
-                    $("form.basvuru-form").ajaxForm({
-                        swal: true,
-                        submitClass: ".btn-fancy",
-                        callback: function(obj, data) {
-                            if (data != 3) {
-                                $('.captcha_image').trigger("click");
-                            }
-                        }
-                    });
-                }
-
-
-                if ($("form#contactform").length) {
-                    $("form#contactform").ajaxForm({
-                        swal: true,
-                        submitClass: ".float-btn",
-                        callback: function(obj, data) {
-                            if (data != 3) {
-                                $('.captcha_image').trigger("click");
-                            }
-                        }
-                    });
-                }
-
-                if ($("form.kursKayit").length) {
-                    $("form.kursKayit").ajaxForm({
-                        swal: true,
-                        submitClass: ".btn-submit",
-                        callback: function(obj, data) {
-                            if (data != 3) {
-                                $('.captcha_image').trigger("click");
-                            }
-                        }
-                    });
-                }
-
-
-                if ($("form.uzmanKayit").length) {
-                    $("form.uzmanKayit").ajaxForm({
-                        swal: true,
-                        submitClass: ".btn-submit",
-                        callback: function(obj, data) {
-                            if (data != 3) {
-                                $('.captcha_image').trigger("click");
-                            }
-                        }
-                    });
-                }
-
-                if ($("form.bilgiEdinme").length) {
-                    $("form.bilgiEdinme").ajaxForm({
-                        swal: true,
-                        submitClass: ".btn-submit",
-                        callback: function(obj, data) {
-                            if (data != 3) {
-                                $('.captcha_image').trigger("click");
-                            }
-                        }
-                    });
-                }
+            }
+        });
+    </script>
 
 
 
-                if ($("form.dilekSikayet").length) {
-                    $("form.dilekSikayet").ajaxForm({
-                        swal: true,
-                        submitClass: ".btn-submit",
-                        callback: function(obj, data) {
-                            if (data != 3) {
-                                $('.captcha_image').trigger("click");
-                            }
-                        }
-                    });
-                }
+    <script>
+        jQuery(document).ready(function($) {
 
-                /* img to svg */
-                $('.svg').each(function() {
-                    var $img = jQuery(this);
-                    var imgID = $img.attr('id');
-                    var imgClass = $img.attr('class');
-                    var imgURL = $img.attr('src');
-
-                    jQuery.get(imgURL, function(data) {
-                        var $svg = jQuery(data).find('svg');
-                        if (typeof imgID !== 'undefined') {
-                            $svg = $svg.attr('id', imgID);
-                        }
-                        if (typeof imgClass !== 'undefined') {
-                            $svg = $svg.attr('class', imgClass + ' replaced-svg');
-                        }
-                        $svg = $svg.removeAttr('xmlns:a');
-                        if (!$svg.attr('viewBox') && $svg.attr('height') && $svg.attr('width')) {
-                            $svg.attr('viewBox', '0 0 ' + $svg.attr('height') + ' ' + $svg.attr('width'))
-                        }
-                        $img.replaceWith($svg);
-                    }, 'xml');
-
+            if ($(".captcha_image").length) {
+                $(".captcha_image").on("click", function() {
+                    $(this).attr("src", BaseURL + "ajax/getcaptchaimage.html?rnd=" + Math.random());
                 });
+            }
+
+            if ($("form.iletisim-form").length) {
+                $("form.iletisim-form").ajaxForm({
+                    swal: true,
+                    submitClass: ".cmt-btn",
+                    callback: function(obj, data) {
+                        if (data != 3) {
+                            $('.captcha_image').trigger("click");
+                        }
+                    }
+                });
+            }
+
+            if ($("form.test-ekipmani-destek-form").length) {
+                $("form.test-ekipmani-destek-form").ajaxForm({
+                    swal: true,
+                    submitClass: ".test-btn",
+                    callback: function(obj, data) {
+                        if (data != 3) {
+                            $('.captcha_image').trigger("click");
+                        }
+                    }
+                });
+            }
+            if ($("form.yedek-parca-destek-form").length) {
+                $("form.yedek-parca-destek-form").ajaxForm({
+                    swal: true,
+                    submitClass: ".yedek-btn",
+                    callback: function(obj, data) {
+                        if (data != 3) {
+                            $('.captcha_image').trigger("click");
+                        }
+                    }
+                });
+            }
 
 
-                <?php
-                $popup = $this->tekSorgu("SELECT * FROM popup WHERE aktif = 1 and tarih >= NOW() and sil <> 1 ORDER BY id DESC");
-                if (is_array($popup)):
-                    if (!isset($_SESSION["modal"]) || $_SESSION["modal"] != $popup["id"]):
-                ?>
-                        let fancyTpl = "";
-                        <? if ($popup["link"] != ""): ?> fancyTpl += "<a target='_blank' href='<?= $popup["link"] ?>'>";
-                        <? endif; ?>
-                        fancyTpl += "<h5 class='text-theme-dark'><?= $this->temizle($popup["baslik"]) ?></h5>";
-                        fancyTpl += "<img src='<?= $this->dbResimAl($popup["resim"], "popup", "0x600") ?>' alt='<?= $this->temizle($popup["baslik"]) ?>'>";
-                        <? if ($popup["link"] != ""): ?> fancyTpl += "</a>";
-                        <? endif; ?>
-                        $.fancybox.open('<div class="message p-15 bg-white">' + fancyTpl + '</div>');
-                <?php $_SESSION["modal"] = $popup["id"];
-                    endif;
-                endif; ?>
+            if ($("form.basvuru-form").length) {
+                $("form.basvuru-form").ajaxForm({
+                    swal: true,
+                    submitClass: ".btn-fancy",
+                    callback: function(obj, data) {
+                        if (data != 3) {
+                            $('.captcha_image').trigger("click");
+                        }
+                    }
+                });
+            }
+
+
+            if ($("form#contactform").length) {
+                $("form#contactform").ajaxForm({
+                    swal: true,
+                    submitClass: ".float-btn",
+                    callback: function(obj, data) {
+                        if (data != 3) {
+                            $('.captcha_image').trigger("click");
+                        }
+                    }
+                });
+            }
+
+            if ($("form.kursKayit").length) {
+                $("form.kursKayit").ajaxForm({
+                    swal: true,
+                    submitClass: ".btn-submit",
+                    callback: function(obj, data) {
+                        if (data != 3) {
+                            $('.captcha_image').trigger("click");
+                        }
+                    }
+                });
+            }
+
+
+            if ($("form.uzmanKayit").length) {
+                $("form.uzmanKayit").ajaxForm({
+                    swal: true,
+                    submitClass: ".btn-submit",
+                    callback: function(obj, data) {
+                        if (data != 3) {
+                            $('.captcha_image').trigger("click");
+                        }
+                    }
+                });
+            }
+
+            if ($("form.bilgiEdinme").length) {
+                $("form.bilgiEdinme").ajaxForm({
+                    swal: true,
+                    submitClass: ".btn-submit",
+                    callback: function(obj, data) {
+                        if (data != 3) {
+                            $('.captcha_image').trigger("click");
+                        }
+                    }
+                });
+            }
+
+
+
+            if ($("form.dilekSikayet").length) {
+                $("form.dilekSikayet").ajaxForm({
+                    swal: true,
+                    submitClass: ".btn-submit",
+                    callback: function(obj, data) {
+                        if (data != 3) {
+                            $('.captcha_image').trigger("click");
+                        }
+                    }
+                });
+            }
+
+            /* img to svg */
+            $('.svg').each(function() {
+                var $img = jQuery(this);
+                var imgID = $img.attr('id');
+                var imgClass = $img.attr('class');
+                var imgURL = $img.attr('src');
+
+                jQuery.get(imgURL, function(data) {
+                    var $svg = jQuery(data).find('svg');
+                    if (typeof imgID !== 'undefined') {
+                        $svg = $svg.attr('id', imgID);
+                    }
+                    if (typeof imgClass !== 'undefined') {
+                        $svg = $svg.attr('class', imgClass + ' replaced-svg');
+                    }
+                    $svg = $svg.removeAttr('xmlns:a');
+                    if (!$svg.attr('viewBox') && $svg.attr('height') && $svg.attr('width')) {
+                        $svg.attr('viewBox', '0 0 ' + $svg.attr('height') + ' ' + $svg.attr('width'))
+                    }
+                    $img.replaceWith($svg);
+                }, 'xml');
 
             });
-        </script>
+
+
+            <?php
+            $popup = $this->tekSorgu("SELECT * FROM popup WHERE aktif = 1 and tarih >= NOW() and sil <> 1 ORDER BY id DESC");
+            if (is_array($popup)):
+                if (!isset($_SESSION["modal"]) || $_SESSION["modal"] != $popup["id"]):
+            ?>
+                    let fancyTpl = "";
+                    <? if ($popup["link"] != ""): ?> fancyTpl += "<a target='_blank' href='<?= $popup["link"] ?>'>";
+                    <? endif; ?>
+                    fancyTpl += "<h5 class='text-theme-dark'><?= $this->temizle($popup["baslik"]) ?></h5>";
+                    fancyTpl += "<img src='<?= $this->dbResimAl($popup["resim"], "popup", "0x600") ?>' alt='<?= $this->temizle($popup["baslik"]) ?>'>";
+                    <? if ($popup["link"] != ""): ?> fancyTpl += "</a>";
+                    <? endif; ?>
+                    $.fancybox.open('<div class="message p-15 bg-white">' + fancyTpl + '</div>');
+            <?php $_SESSION["modal"] = $popup["id"];
+                endif;
+            endif; ?>
+
+        });
+    </script>
 
 </body>
 
