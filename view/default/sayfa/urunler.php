@@ -373,3 +373,100 @@ if (is_array($tumUrunlerSayisi)) {
     </div>
 </div>
 <!-- ürün detay modal -->
+
+<script>
+    /**
+     * Ürün Detay Modal JavaScript
+     * 
+     * Bu script, ürün kartlarına tıklandığında Modal'ı açar ve dinamik tablo verilerini gösterir.
+     * Veriler data-attributes üzerinden gelir:
+     * - data-img: Ürün resmi URL'i
+     * - data-code: Ürün kodu
+     * - data-columns: Tablo kolonları (JSON string)
+     * - data-rows: Tablo satırları (JSON string - nesne dizisi)
+     */
+    document.addEventListener('DOMContentLoaded', function() {
+        const modalElement = document.getElementById('productModal');
+        
+        // Modal elementi yoksa çık
+        if (!modalElement) return;
+        
+        const bsModal = new bootstrap.Modal(modalElement);
+
+        // Modal açıldığında verileri yükle
+        modalElement.addEventListener('show.bs.modal', function(e) {
+            let btn = e.relatedTarget;
+
+            // Eğer btn yoksa ve URL'de hash varsa, hash'ten bul
+            if (!btn && window.location.hash) {
+                const hash = decodeURIComponent(window.location.hash.substring(1));
+                btn = document.querySelector(`.product_item_card[data-code="${hash}"]`);
+            }
+
+            // Hala btn yoksa çık
+            if (!btn) return;
+
+            // Ürün kodu ve resim URL'ini al
+            const code = btn.getAttribute('data-code');
+            window.location.hash = code;
+
+            // Resim URL'ini al ve göster
+            const imgSrc = btn.getAttribute('data-img');
+            document.getElementById('mImg').src = imgSrc || '';
+            document.getElementById('mCode').textContent = code || '';
+
+            // Kolon ve satır verilerini al
+            const colsAttr = btn.getAttribute('data-columns');
+            const rowsAttr = btn.getAttribute('data-rows');
+            
+            // Tablo başlığını ve gövdesini hazırla
+            const thead = document.getElementById('mHead');
+            const tbody = document.getElementById('mBody');
+            
+            // Eğer kolon ve satır verileri varsa tabloyu oluştur
+            if (colsAttr && rowsAttr && colsAttr !== '[]' && rowsAttr !== '[]') {
+                try {
+                    // JSON string'leri parse et
+                    const cols = JSON.parse(colsAttr);
+                    const rows = JSON.parse(rowsAttr);
+                    
+                    // Kolon başlıklarını oluştur
+                    thead.innerHTML = '<tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr>';
+                    
+                    // Satırları oluştur
+                    // rows bir dizi nesne olduğu için, her nesneyi kolon sırasına göre diziye çevir
+                    tbody.innerHTML = rows.map(row => {
+                        // Her satır bir nesne, kolon sırasına göre değerleri al
+                        const cells = cols.map(col => {
+                            // Kolon adına göre değeri al, yoksa boş string
+                            return row[col] || '';
+                        });
+                        return `<tr>${cells.map(cell => `<td>${cell}</td>`).join('')}</tr>`;
+                    }).join('');
+                } catch (e) {
+                    console.error('Tablo verisi parse edilemedi:', e);
+                    thead.innerHTML = '';
+                    tbody.innerHTML = '<tr><td colspan="100%" class="text-center">Veri yüklenemedi</td></tr>';
+                }
+            } else {
+                // Veri yoksa boş tablo göster
+                thead.innerHTML = '';
+                tbody.innerHTML = '<tr><td colspan="100%" class="text-center">Bu ürün için özellik bilgisi bulunmamaktadır.</td></tr>';
+            }
+        });
+
+        // Modal kapandığında hash'i temizle
+        modalElement.addEventListener('hidden.bs.modal', function() {
+            history.replaceState(null, null, ' ');
+        });
+
+        // Sayfa yüklendiğinde URL'de hash varsa Modal'ı aç
+        const currentHash = decodeURIComponent(window.location.hash.substring(1));
+        if (currentHash) {
+            const targetProduct = document.querySelector(`.product_item_card[data-code="${currentHash}"]`);
+            if (targetProduct) {
+                bsModal.show(targetProduct);
+            }
+        }
+    });
+</script>

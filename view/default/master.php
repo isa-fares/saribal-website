@@ -120,54 +120,6 @@ $this->inc_file("script", array(
         "js/sweetalert2@11.js",
     ));
     ?>
-    <script>
-        //document.getElementById('mSize').textContent = btn.getAttribute('data-main-size');
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const modalElement = document.getElementById('productModal');
-            const bsModal = new bootstrap.Modal(modalElement);
-
-            modalElement.addEventListener('show.bs.modal', function(e) {
-                let btn = e.relatedTarget;
-
-                if (!btn && window.location.hash) {
-                    const hash = decodeURIComponent(window.location.hash.substring(1));
-                    btn = document.querySelector(`.product_item_card[data-code="${hash}"]`);
-                }
-
-                if (!btn) return;
-
-                const code = btn.getAttribute('data-code');
-                window.location.hash = code;
-
-                document.getElementById('mImg').src = btn.getAttribute('data-img');
-                document.getElementById('mCode').textContent = code;
-
-                const cols = JSON.parse(btn.getAttribute('data-columns'));
-                const rows = JSON.parse(btn.getAttribute('data-rows'));
-
-                const thead = document.getElementById('mHead');
-                thead.innerHTML = '<tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr>';
-
-                const tbody = document.getElementById('mBody');
-                tbody.innerHTML = rows.map(row =>
-                    `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`
-                ).join('');
-            });
-
-            modalElement.addEventListener('hidden.bs.modal', function() {
-                history.replaceState(null, null, ' ');
-            });
-
-            const currentHash = decodeURIComponent(window.location.hash.substring(1));
-            if (currentHash) {
-                const targetProduct = document.querySelector(`.product_item_card[data-code="${currentHash}"]`);
-                if (targetProduct) {
-                    bsModal.show(targetProduct);
-                }
-            }
-        });
-    </script>
 
 
 
