@@ -282,7 +282,7 @@ class Urun  extends Settings{
         $text.=$form->openColumn(4);
 
 
-        $text.= $form->file(array('url'=>$this->BaseURL('upload')."/".$this->modulName,'folder'=>$this->modulName,'title'=>'Logo','name'=>'resim','resimBoyut'=>$this->modul_image_size($this->modul_info["id"]),'src'=>((isset($data['tr']['resim'])) ? $data['tr']['resim'] :'')));
+        $text.= $form->file(array('url'=>$this->BaseURL('upload')."/".$this->modulName,'folder'=>$this->modulName,'title'=>'Ürün Resmi','name'=>'resim','src'=>((isset($data['tr']['resim'])) ? $data['tr']['resim'] :'')));
 
 
         $text.=$form->openBox().$form->openBoxBody();

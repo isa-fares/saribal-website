@@ -1,0 +1,1 @@
+<button type="submit" class="submit_button <?=$class?>"><img src="<?=$imageURL?>"></button>

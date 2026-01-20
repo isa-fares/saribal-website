@@ -1,0 +1,40 @@
+<?php
+
+return[
+
+		'index'=>'HOME',
+		'kurumsal'=>'CORPORATE',
+		'hizmetlerimiz'=>'OUR SERVICES',
+		'mevzuat'=>'LEGISLATION',
+		'ahilik'=>'ARTISAN SUPPORT',
+		'iletisim'=>'CONTACT',
+		'bilgi_edinme'=>'GET&lt;br&gt;INFORMATION',
+		'dilek_sikayet_formu'=>'WISH AND COMPLAINT&lt;br&gt;FORM',
+		'mevzuat_genelgeler'=>'LEGISLATION &amp;&lt;br&gt;CIRCULARS',
+		'giris'=>'LOGIN',
+		'egitim_hizmetleri'=>'Education Service',
+		'esnaf_sanatkar_sicili'=>'Artisan Registry',
+		'hizli_erisim'=>'QUICK &lt;span class=&quot;text-secondary-color&quot;&gt;MENU&lt;/span&gt;',
+		'oneri_sikayet'=>'SUGGESTION &amp; COMPLAINT',
+		'sikca_sorulanlar'=>'FREQUENTLY ASKED',
+		'rakamlarla_gesob'=>'GESOB IN NUMBERS',
+		'esnaf-sanatkar-sicili'=>'Artisan Registry',
+		'bilgi-edinme'=>'Information&lt;br&gt;Obtaining',
+		'dilek-sikayet-formu'=>'Wish and Complaint&lt;br&gt;Form',
+		'mevzuat-genelgeler'=>'Legislation&lt;br&gt;Circulars',
+		'odalar'=>'CHAMBERS',
+		'video-galeri'=>'Vİdeo Gallery',
+		'foto-galeri'=>'Photo Gallery',
+		'haberler'=>'News',
+		'duyurular'=>'Announcements',
+		'medya'=>'MEDIA',
+		'egitim-merkezleri'=>'Education Centers',
+		'politikalarimiz'=>'Our Policies',
+		'kurumsal-kimlik'=>'Corporate Identity',
+		'kurslar'=>'Educations',
+		'gesob_bilmer'=>'GESOB Bilmer',
+		'birlik_denetleme_kurulu'=>'BİDDG',
+		'hizmetler'=>'OUR SERVICES',
+
+
+];

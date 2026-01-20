@@ -1,0 +1,30 @@
+{
+  "name": "snowsoft/snow-captcha",
+  "description": "Php Classic Captcha",
+  "license": "MIT",
+  "keywords": [
+    "Captcha"
+  ],
+  "type" :"library",
+  "homepage": "https://github.com/snowsoft/snow-captcha",
+  "authors": [
+    {
+      "name": "Abdulkadir KAR",
+      "email": "abdulkadirkar@gmail.com"
+    }
+  ],
+
+  "require": {
+    "php": ">=5.3.0"
+  },
+  "suggest": {
+    "ext-gd": "to use GD library based image processing.",
+    "ext-imagick": "to use Imagick based image processing.",
+    "intervention/imagecache": "Caching extension for the Intervention Image library"
+  },
+  "autoload": {
+    "psr-4": {
+      "Snowsoft\\Captcha\\": "Snowsoft/Captcha/"
+    }
+  }
+  }

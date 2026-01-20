@@ -1,0 +1,73 @@
+<IfModule mod_rewrite.c>
+
+RewriteEngine On
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+
+RewriteCond %{REQUEST_FILENAME} -s [OR]
+RewriteCond %{REQUEST_FILENAME} -l [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^.*$ - [NC,L] # <--DON'T KNOW ABOUT THESE FLAGS
+
+
+
+
+RewriteRule ^ajax/(.*)/(.*)\.html$ index.php?page=$1&type=ajax&katurl=$2 [L,NC]
+RewriteRule ^ajax/(.*)\.html$ index.php?page=$1&type=ajax [L,NC]
+
+
+RewriteRule ^bulten.html/(.*)/([0-9]+)$ index.php?page=bulten&lang=$1&id=$2 [L]
+
+
+RewriteRule ^en/(.*)/(.*)-([0-9]+)\.html$ index.php?page=$1&katurl=$2&id=$3&lang=en [L,NC]
+RewriteRule ^en/(.*).html$ index.php?page=$1&lang=en  [L,NC]
+RewriteRule ^en/(.*)/(.*)-([0-9]+)\.html/([0-9]+)$ index.php?page=$1&katurl=$2&id=$3&lang=en&sayfa=$4 [L,NC]
+RewriteRule ^en/(.*).html/([0-9]+)$ index.php?page=$1&lang=en&sayfa=$2 [L,NC]
+RewriteRule ^en/user/(.*)\.html$ index.php?page=user&type=$1&lang=en [L,NC]
+
+
+RewriteRule ^ar/(.*)/(.*)-([0-9]+)\.html$ index.php?page=$1&katurl=$2&id=$3&lang=ar [L,NC]
+RewriteRule ^ar/(.*).html$ index.php?page=$1&lang=ar  [L,NC]
+RewriteRule ^ar/(.*)/(.*)-([0-9]+)\.html/([0-9]+)$ index.php?page=$1&katurl=$2&id=$3&lang=ar&sayfa=$4 [L,NC]
+RewriteRule ^ar/(.*).html/([0-9]+)$ index.php?page=$1&lang=ar&sayfa=$2 [L,NC]
+RewriteRule ^ar/user/(.*)\.html$ index.php?page=user&type=$1&lang=ar [L,NC]
+
+
+RewriteRule ^(.*)/(.*)/(.*)\.html$ index.php?page=$1&katurl=$2&urunurl=$3&lang=tr [L,NC]
+RewriteRule ^(.*)/(.*)-([0-9]+)\.html$ index.php?page=$1&katurl=$2&id=$3&lang=tr [L,NC]
+
+
+
+RewriteRule ^(.*)/(.*)-([0-9]+)\.html$ index.php?page=$1&katurl=$2&id=$3&lang=tr [L,NC]
+
+
+
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)/(.*)\.html$ index.php?page=$2&lang=$1 [L]
+RewriteRule ^(.*)\.html$ index.php?page=$1&lang=tr [L]
+RewriteRule ^(.*)/(.*)-([0-9]+)\.html/([0-9]+)$ index.php?page=$1&katurl=$2&id=$3&lang=tr&sayfa=$4 [L,NC]
+RewriteRule ^(.*)/(.*)-([0-9]+)\.html/([0-9]+)$ index.php?page=$1&katurl=$2&id=$3&sayfa=$4 [L,NC]
+RewriteRule ^(.*)\.html/([0-9]+)$ index.php?page=$1&lang=tr&sayfa=$2 [L]
+
+
+ErrorDocument 404 /index.php?page=hata&lang=tr
+
+RewriteRule ^upload/(.*)$ upload/$1 [L]
+
+
+</IfModule>
+
+<IfModule mod_expires.c>
+
+    AddType application/vnd.ms-fontobject .eot
+    AddType application/x-font-ttf .ttf
+    AddType application/x-font-opentype .otf
+    AddType application/x-font-woff .woff
+    AddType application/x-font-woff .woff2
+    AddType image/svg+xml .svg
+
+</IfModule>
+

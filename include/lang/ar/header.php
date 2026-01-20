@@ -1,0 +1,40 @@
+<?php
+
+return[
+
+		'index'=>'الصفحة الرئيسية',
+		'kurumsal'=>'شركة كبرى',
+		'hizmetlerimiz'=>'خدماتنا',
+		'mevzuat'=>'تشريع',
+		'ahilik'=>'دعم الحرفيين',
+		'iletisim'=>'اتصل',
+		'bilgi_edinme'=>'الحصول على &lt;br&gt; معلومات',
+		'dilek_sikayet_formu'=>'رغبات وشكاوى &lt;br&gt; شكل',
+		'mevzuat_genelgeler'=>'التشريعات&lt;br&gt; ودورات',
+		'giris'=>'تسجيل الدخول',
+		'egitim_hizmetleri'=>'خدمات التعليم',
+		'esnaf_sanatkar_sicili'=>'سجل الحرفيين',
+		'hizli_erisim'=>'وصول &lt;span class=&quot;text-secondary-color&quot;&gt;سريع&lt;/span&gt;',
+		'oneri_sikayet'=>'الاقتراح والشكوى',
+		'sikca_sorulanlar'=>'اسئلة متداولة',
+		'rakamlarla_gesob'=>'GESOB بالأرقام',
+		'esnaf-sanatkar-sicili'=>'سجل الحرفيين',
+		'bilgi-edinme'=>'الحصول على&lt;br&gt; المعلومات',
+		'dilek-sikayet-formu'=>'نموذج الرغبات و&lt;br&gt;الشكوى',
+		'mevzuat-genelgeler'=>'التشريعات &lt;br&gt;والتعاميم',
+		'odalar'=>'غرف',
+		'video-galeri'=>'معرض الفيديو',
+		'foto-galeri'=>'معرض الصور',
+		'haberler'=>'أخبار',
+		'duyurular'=>'الإعلانات',
+		'medya'=>'وسائط',
+		'egitim-merkezleri'=>'مراكز تعليم',
+		'politikalarimiz'=>'سياساتنا',
+		'kurumsal-kimlik'=>'هوية الشركة',
+		'kurslar'=>'الدورات',
+		'gesob_bilmer'=>'GESOB Bilmer',
+		'birlik_denetleme_kurulu'=>'BİDDG',
+		'hizmetler'=>'خدماتنا',
+
+
+];

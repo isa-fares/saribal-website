@@ -1,0 +1,12 @@
+---
+alwaysApply: true
+---
+1-Always explain before writing code
+
+2-Prefer explicit typing
+
+3-Ask questions instead of guessing
+
+4-All code comments must be in Turkish and concise
+
+5-All commit messages must be in Turkish and concise
