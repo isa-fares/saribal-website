@@ -351,7 +351,7 @@ if (is_array($tumUrunlerSayisi)) {
             </div>
             <div class="modal-body">
                 <div class="row">
-                    <div class="col-md-5"><img id="mImg" src="" class="img-fluid border"></div>
+                    <div class="col-md-5"><img id="mImg" src="" class="img-fluid "></div>
                     <div class="col-md-7">
                         <p><strong id="mCode"></strong></p>
                         <!--<p><strong>Ölçü:</strong> <span id="mSize"></span></p>-->

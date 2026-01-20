@@ -5917,7 +5917,7 @@ body {
 }
 
 #mImg {
-    border: 1px solid #eaeaea;
+    /* border: 1px solid #eaeaea; */
     max-height: 400px;
     object-fit: contain;
     margin: 0 auto;

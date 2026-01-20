@@ -282,7 +282,7 @@ class Urun  extends Settings{
         $text.=$form->openColumn(4);
 
 
-        $text.= $form->file(array('url'=>$this->BaseURL('upload')."/".$this->modulName,'folder'=>$this->modulName,'title'=>'Ürün Resmi','name'=>'resim','src'=>((isset($data['tr']['resim'])) ? $data['tr']['resim'] :'')));
+        $text.= $form->file2(array('url'=>$this->BaseURL('upload')."/".$this->modulName,'folder'=>$this->modulName,'title'=>'Ürün Resmi','name'=>'resim','resimBoyut'=>"600x400",'src'=>((isset($data['tr']['resim'])) ? $data['tr']['resim'] :'')));
 
 
         $text.=$form->openBox().$form->openBoxBody();
@@ -295,7 +295,7 @@ class Urun  extends Settings{
             $selected_kid = $request_kid;
         }
         
-        $text .= $form->select(array('title'=>'Kategori', 'name'=>'kid','data'=> $form->parent(array('sql'=>"select * from $this->ktable WHERE sil <> 1 and ",'option'=>array('value'=>'id','title'=>'baslik'),"kat"=>"ustu", 'selected'=>$selected_kid),0,0)));
+        $text .= $form->select(array('required'=>true,'title'=>'Kategori', 'name'=>'kid','data'=> $form->parent(array('sql'=>"select * from $this->ktable WHERE sil <> 1 and ",'option'=>array('value'=>'id','title'=>'baslik'),"kat"=>"ustu", 'selected'=>$selected_kid),0,0)));
         $text .= $form->checkbox(array('value'=>((isset($data["tr"]['yeni'])) ? $this->temizle($data["tr"]['yeni']) :''),'title'=>'Yeni','name'=>'yeni','help'=>'Yeni Ürün', "checked"=>((isset($data["tr"]["yeni"]) && $data["tr"]["yeni"] == 1) ? "checked" : "")));
         $text .= $form->checkbox(array('value'=>((isset($data["tr"]['aktif'])) ? $this->temizle($data["tr"]['aktif']) :''),'title'=>'Aktif','name'=>'aktif','help'=>'Onay Durumu', "checked"=>((isset($data["tr"]["aktif"])) ? "" : "checked")));
         $text.= $form->closeDiv();
