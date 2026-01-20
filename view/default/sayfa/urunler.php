@@ -1,40 +1,51 @@
 <?php
 
 /**
- * @var $this FrontClass|Loader object
- * @var $lang string
- * @var $assetURL string
- * @var $page string
- * @var $katurl string
+ * Ürünler Listeleme Sayfası
+ * 
+ * Bu sayfa, kategorilere göre ürünleri listeler ve dinamik kategori yapısını gösterir.
+ * 
+ * @var $this FrontClass|Loader object - Frontend sınıfı nesnesi
+ * @var $lang string - Aktif dil kodu (tr, en, ar)
+ * @var $assetURL string - Asset dosyalarının URL'i
+ * @var $page string - Sayfa adı
+ * @var $katurl string - Kategori URL'i (URL'den gelen)
  */
 
-$table = "urun";
-$sayfa = "urunler";
-$kategoriTable = "kategori";
+// ============================================
+// TABLO VE SAYFA TANIMLAMALARI
+// ============================================
+$table = "urun";              // Ürünler tablosu
+$sayfa = "urunler";           // Sayfa adı (URL için)
+$kategoriTable = "kategori";  // Kategoriler tablosu
 
-// Tüm kategorileri getir (ana ve alt kategoriler)
+// ============================================
+// KATEGORİLERİ GETİR VE AYIR
+// ============================================
+// Tüm aktif kategorileri getir (ana ve alt kategoriler dahil)
 $tumKategoriler = $this->dbLangSelect($kategoriTable, "aktif = 1 and sil = 0", "", "", "ORDER BY sira ASC, id ASC");
 
-// Ana kategorileri (ustu = 0 veya NULL) ve alt kategorileri ayır
-$anaKategoriler = array();
-$altKategoriler = array();
+// Ana kategoriler (ustu = 0 veya NULL) ve alt kategoriler (ustu > 0) için diziler
+$anaKategoriler = array();  // Ana kategoriler dizisi
+$altKategoriler = array();  // Alt kategoriler dizisi (ana kategori ID'sine göre gruplanmış)
 
 if (is_array($tumKategoriler)) {
+    // Her kategoriyi kontrol et ve ana/alt kategori olarak ayır
     foreach ($tumKategoriler as $kat) {
-        $katID = $this->getID($kat);
-        $ustu = isset($kat['ustu']) ? intval($kat['ustu']) : 0;
+        $katID = $this->getID($kat);  // Dil desteği ile ID al (getID fonksiyonu kullanılıyor)
+        $ustu = isset($kat['ustu']) ? intval($kat['ustu']) : 0;  // Üst kategori ID'si
         
         if ($ustu == 0 || $ustu == null) {
-            // Ana kategori
+            // Ana kategori (üst kategori yok)
             $anaKategoriler[$katID] = $kat;
-            $anaKategoriler[$katID]['alt_kategoriler'] = array();
+            $anaKategoriler[$katID]['alt_kategoriler'] = array();  // Alt kategoriler için boş dizi hazırla
         } else {
-            // Alt kategori
-            $altKategoriler[$ustu][] = $kat;
+            // Alt kategori (üst kategori var)
+            $altKategoriler[$ustu][] = $kat;  // Üst kategori ID'sine göre grupla
         }
     }
     
-    // Alt kategorileri ana kategorilere ekle
+    // Alt kategorileri ilgili ana kategorilere ekle
     foreach ($altKategoriler as $ustID => $altlar) {
         if (isset($anaKategoriler[$ustID])) {
             $anaKategoriler[$ustID]['alt_kategoriler'] = $altlar;
@@ -42,22 +53,27 @@ if (is_array($tumKategoriler)) {
     }
 }
 
-// Eğer katurl ve id varsa (kategori sayfası), o kategoriye ait ürünleri göster
-// Eğer kid varsa, o kategoriye ait ürünleri göster
-// Eğer ikisi de yoksa, ilk alt kategoriyi aktif yap
+// ============================================
+// SEÇİLİ KATEGORİYİ BELİRLE
+// ============================================
+// Hangi kategorinin seçili olduğunu belirle (URL'den veya varsayılan olarak ilk alt kategori)
 $seciliKategoriID = 0;
+
 if (!empty($katurl) && $id > 0) {
-    // URL'den gelen kategori ID'si
+    // Durum 1: URL'den kategori bilgisi geldi (örn: urunler/kategori-url-6.html)
     $seciliKategoriID = intval($id);
+    
 } else if ($kid > 0) {
-    // Direkt kid parametresi
+    // Durum 2: Direkt kid parametresi var (GET parametresi)
     $seciliKategoriID = intval($kid);
+    
 } else {
-    // Eğer hiçbir kategori seçilmemişse, ilk alt kategoriyi bul
+    // Durum 3: Hiçbir kategori seçilmemişse, ilk alt kategoriyi varsayılan olarak seç
     if (is_array($anaKategoriler) && count($anaKategoriler) > 0) {
         foreach ($anaKategoriler as $anaKat) {
+            // Ana kategorinin alt kategorileri var mı kontrol et
             if (isset($anaKat['alt_kategoriler']) && is_array($anaKat['alt_kategoriler']) && count($anaKat['alt_kategoriler']) > 0) {
-                // İlk alt kategoriyi bul
+                // İlk alt kategoriyi bul ve varsayılan olarak seç
                 $ilkAltKat = $anaKat['alt_kategoriler'][0];
                 $seciliKategoriID = $this->getID($ilkAltKat);
                 break; // İlk alt kategoriyi bulduktan sonra döngüden çık
@@ -66,33 +82,45 @@ if (!empty($katurl) && $id > 0) {
     }
 }
 
+// ============================================
+// ÜRÜNLERİ GETİR
+// ============================================
 if ($seciliKategoriID > 0) {
-    // Kategori sayfası - kategori bilgilerini al
+    // Kategori seçilmişse: O kategoriye ait ürünleri getir
     $kategoriVeri = $this->dbLangSelectRow($kategoriTable, array("id" => $seciliKategoriID, "master_id" => $seciliKategoriID));
+    
     if (is_array($kategoriVeri)) {
+        // Kategori bulundu: Kategori bilgilerini ve ürünlerini al
         $baslik = $this->temizle($kategoriVeri["baslik"]);
         $this->sayfaBaslik = $this->temizle($kategoriVeri["baslik"]) . " - " . $this->ayarlar("title_" . $lang);
+        // Seçili kategoriye ait aktif ürünleri getir
         $urunler = $this->dbLangSelect("urun", "aktif = 1 and sil = 0 and baslik <> '' and kid = " . $seciliKategoriID, "resim");
     } else {
+        // Kategori bulunamadı: Tüm ürünleri göster
         $baslik = "Ürünler";
         $this->sayfaBaslik = "Ürünler - " . $this->ayarlar("title_" . $lang);
         $urunler = $this->dbLangSelect("urun", "aktif = 1 and sil = 0 and baslik <> ''", "resim");
         $seciliKategoriID = 0;
     }
 } else {
-    // Ana ürünler sayfası - tüm ürünleri göster
+    // Hiçbir kategori seçilmemişse: Tüm aktif ürünleri göster
     $baslik = "Ürünler";
     $this->sayfaBaslik = "Ürünler - " . $this->ayarlar("title_" . $lang);
     $urunler = $this->dbLangSelect("urun", "aktif = 1 and sil = 0 and baslik <> ''", "resim");
 }
 
-// Her kategori için ürün sayısını hesapla (tüm aktif ürünlerden)
+// ============================================
+// KATEGORİ BAŞINA ÜRÜN SAYISINI HESAPLA
+// ============================================
+// Alt kategorilerin yanında gösterilecek ürün sayısını hesapla
 $kategoriUrunSayisi = array();
 $tumUrunlerSayisi = $this->dbLangSelect("urun", "aktif = 1 and sil = 0 and baslik <> ''", "resim");
+
 if (is_array($tumUrunlerSayisi)) {
     foreach ($tumUrunlerSayisi as $urun) {
         $urunKid = isset($urun['kid']) ? intval($urun['kid']) : 0;
         if ($urunKid > 0) {
+            // Her kategori için ürün sayısını say
             if (!isset($kategoriUrunSayisi[$urunKid])) {
                 $kategoriUrunSayisi[$urunKid] = 0;
             }
@@ -107,22 +135,22 @@ if (is_array($tumUrunlerSayisi)) {
     <div class="container-fluid px-xxl-5">
         <div class="row">
             <div class="col-md-10 offset-md-1 text-center">
-                <h2 class="section-title style-one fw-black text-white"><?php echo htmlspecialchars($baslik, ENT_QUOTES, 'UTF-8'); ?></h2>
+                <h2 class="section-title style-one fw-black text-white"><?=  $baslik  ?></h2>
                 <ul class="br-menu list-unstyled">
-                    <li><a href="<?php echo $this->BaseURL('index.html', $lang, 1); ?>"><img
+                    <li><a href="<?= $this->BaseURL('index.html', $lang, 1); ?>"><img
                                 src="https://templates.envytheme.com/renius/default/assets/img/icons/home-icon.svg"
                                 alt="Icon">Anasayfa</a></li>
-                    <li><a href="<?php echo $this->BaseURL($sayfa . '.html', $lang, 1); ?>">Ürünlerimiz</a></li>
+                    <li><a href="<?= $this->BaseURL($sayfa . '.html', $lang, 1); ?>">Ürünlerimiz</a></li>
                     <?php if ($seciliKategoriID > 0): ?>
                         <?php
                         $kategoriVeri = $this->dbLangSelectRow($kategoriTable, array("id" => $seciliKategoriID, "master_id" => $seciliKategoriID));
                         if (is_array($kategoriVeri)):
                             $kategoriBaslik = $this->temizle($kategoriVeri["baslik"]);
                         ?>
-                            <li><?php echo htmlspecialchars($kategoriBaslik, ENT_QUOTES, 'UTF-8'); ?></li>
+                            <li><?= $kategoriBaslik ?></li>
                         <?php endif; ?>
                     <?php else: ?>
-                        <li><?php echo htmlspecialchars($baslik, ENT_QUOTES, 'UTF-8'); ?></li>
+                        <li><?= $baslik ?></li>
                     <?php endif; ?>
                 </ul>
             </div>
@@ -141,29 +169,44 @@ if (is_array($tumUrunlerSayisi)) {
                     <?php if (is_array($anaKategoriler) && count($anaKategoriler) > 0): ?>
                         <?php foreach ($anaKategoriler as $anaKat): ?>
                             <?php
-                            $anaKatID = $this->getID($anaKat);
+                            // ============================================
+                            // ANA KATEGORİ BİLGİLERİNİ HAZIRLA
+                            // ============================================
+                            $anaKatID = $this->getID($anaKat);  // Dil desteği ile ID al
                             $anaKatBaslik = isset($anaKat['baslik']) ? $this->temizle($anaKat['baslik']) : '';
                             $anaKatURL = isset($anaKat['url']) ? $anaKat['url'] : '';
-                            // URL zaten ID içeriyor (örn: 1000x1000-mm-6), direkt kullan
+                            
+                            // URL oluştur: URL zaten ID içeriyor (örn: 1000x1000-mm-6), direkt kullan
+                            // BaseURL fonksiyonu otomatik olarak .html ekler
                             $anaKatLink = $this->BaseURL($sayfa . "/" . $anaKatURL, $lang, 1);
                             
                             ?>
                             <li>
+                                <!-- Ana kategori linki -->
                                 <a href="<?php echo $anaKatLink; ?>" <?php echo ($seciliKategoriID == $anaKatID) ? 'class="active"' : ''; ?>>
                                     <?php echo $anaKatBaslik; ?>
                                 </a>
+                                
                                 <?php if (isset($anaKat['alt_kategoriler']) && is_array($anaKat['alt_kategoriler']) && count($anaKat['alt_kategoriler']) > 0): ?>
+                                    <!-- Alt kategoriler listesi -->
                                     <ul>
                                         <?php foreach ($anaKat['alt_kategoriler'] as $altKat): ?>
                                             <?php
-                                            $altKatID = $this->getID($altKat);
+                                            // ============================================
+                                            // ALT KATEGORİ BİLGİLERİNİ HAZIRLA
+                                            // ============================================
+                                            $altKatID = $this->getID($altKat);  // Dil desteği ile ID al
                                             $altKatBaslik = isset($altKat['baslik']) ? $this->temizle($altKat['baslik']) : '';
                                             $altKatURL = isset($altKat['url']) ? $altKat['url'] : '';
-                                            // URL zaten ID içeriyor (örn: 1000x1000-mm-6), direkt kullan
+                                            
+                                            // URL oluştur: URL zaten ID içeriyor (örn: 1000x1000-mm-6), direkt kullan
                                             $altKatLink = $this->BaseURL($sayfa . "/" . $altKatURL, $lang, 1);
+                                            
+                                            // Bu alt kategoriye ait ürün sayısını al
                                             $altUrunSayisi = isset($kategoriUrunSayisi[$altKatID]) ? $kategoriUrunSayisi[$altKatID] : 0;
                                             ?>
                                             <li>
+                                                <!-- Alt kategori linki ve ürün sayısı -->
                                                 <a href="<?php echo $altKatLink; ?>" <?php echo ($seciliKategoriID == $altKatID) ? 'class="active"' : ''; ?>>
                                                     <?php echo $altKatBaslik; ?>
                                                     <?php if ($altUrunSayisi > 0): ?>
@@ -177,6 +220,7 @@ if (is_array($tumUrunlerSayisi)) {
                             </li>
                         <?php endforeach; ?>
                     <?php else: ?>
+                        <!-- Kategori bulunamadı durumu -->
                         <li><a href="#">Kategori bulunamadı</a></li>
                     <?php endif; ?>
                 </ul>
@@ -188,48 +232,67 @@ if (is_array($tumUrunlerSayisi)) {
                 <div class="row prd_lister">
                     <?php foreach ($urunler as $urun): ?>
                         <?php
-                        $urunID = $this->getID($urun);
+                        // ============================================
+                        // ÜRÜN BİLGİLERİNİ HAZIRLA
+                        // ============================================
+                        $urunID = $this->getID($urun);  // Dil desteği ile ID al
                         $urunBaslik = isset($urun['baslik']) ? $this->temizle($urun['baslik']) : '';
                         $urunResim = isset($urun['resim']) && !empty($urun['resim']) ? $urun['resim'] : '';
-                        $urunYeni = isset($urun['yeni']) && $urun['yeni'] == 1 ? true : false;
+                        $urunYeni = isset($urun['yeni']) && $urun['yeni'] == 1 ? true : false;  // "Yeni" ürün mü?
                         $urunOzellikler = isset($urun['ozellikler']) && !empty($urun['ozellikler']) ? html_entity_decode($urun['ozellikler'], ENT_QUOTES, 'UTF-8') : '';
                         
-                        // Resim URL'i oluştur - resimGet ve BaseURL kullan (orijinal boyutta)
+                        // ============================================
+                        // RESİM URL'İNİ OLUŞTUR (ORİJİNAL BOYUTTA)
+                        // ============================================
                         $resimURL = '';
                         if (!empty($urunResim)) {
                             if (strpos($urunResim, 'data:image') === 0) {
-                                // Base64 resim - direkt kullan
+                                // Base64 formatında resim (doğrudan kullan)
                                 $resimURL = $urunResim;
                             } else {
-                                // Normal resim dosyası - resimGet kullanarak orijinal boyutta
-                                $resimDosya = $this->resimGet($urunResim);
+                                // Normal resim dosyası: resimGet ile işle ve orijinal boyutta göster
+                                $resimDosya = $this->resimGet($urunResim);  // JSON formatını parse et
                                 if ($resimDosya && file_exists($this->settings->config('folder') . $table . "/" . $resimDosya)) {
+                                    // Resim dosyası mevcut: BaseURL ile link oluştur
                                     $resimURL = $this->BaseURL('upload/' . $table . '/' . $resimDosya);
                                 } else {
-                                    // Resim yoksa no-image göster
+                                    // Resim dosyası yok: Varsayılan resim göster
                                     $resimURL = $this->BaseURL('assets/img/no-image.jpg');
                                 }
                             }
                         }
                         
-                        // Özellikler JSON'unu parse et - jsonGet kullan
+                        // ============================================
+                        // ÜRÜN ÖZELLİKLERİNİ PARSE ET (JSON)
+                        // ============================================
+                        // Dinamik tablo için kolon ve satır verilerini hazırla
                         $ozelliklerData = null;
-                        $dataColumns = '[]';
-                        $dataRows = '[]';
+                        $dataColumns = '[]';  // Modal için kolonlar (JSON string)
+                        $dataRows = '[]';     // Modal için satırlar (JSON string)
+                        
                         if (!empty($urunOzellikler)) {
+                            // JSONGet fonksiyonu ile JSON'u parse et
                             $ozelliklerData = $this->jsonGet($urunOzellikler);
+                            
                             if (is_array($ozelliklerData) && isset($ozelliklerData['kolonlar']) && isset($ozelliklerData['satirlar'])) {
+                                // Kolon ve satır verilerini JSON string'e çevir (Modal için)
                                 $dataColumns = json_encode($ozelliklerData['kolonlar'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                                 $dataRows = json_encode($ozelliklerData['satirlar'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                             }
                         }
                         
-                        // Modal için data attribute'ları hazırla
+                        // ============================================
+                        // MODAL İÇİN DATA ATTRIBUTE'LARINI HAZIRLA
+                        // ============================================
+                        // Bootstrap Modal'a gönderilecek veriler
                         $modalAttributes = '';
+                        
                         if (!empty($resimURL)) {
                             $modalAttributes .= ' data-img="' . htmlspecialchars($resimURL, ENT_QUOTES, 'UTF-8') . '"';
                         }
                         $modalAttributes .= ' data-code="' . htmlspecialchars($urunBaslik, ENT_QUOTES, 'UTF-8') . '"';
+                        
+                        // Özellikler varsa modal'a ekle
                         if (!empty($dataColumns) && $dataColumns != '[]') {
                             $modalAttributes .= ' data-columns=\'' . htmlspecialchars($dataColumns, ENT_QUOTES, 'UTF-8') . '\'';
                         }
@@ -237,18 +300,25 @@ if (is_array($tumUrunlerSayisi)) {
                             $modalAttributes .= ' data-rows=\'' . htmlspecialchars($dataRows, ENT_QUOTES, 'UTF-8') . '\'';
                         }
                         ?>
+                        <!-- Ürün kartı -->
                         <div class="col-lg-3 col-md-4 col-6">
                             <div class="product_item_card" <?php echo (!empty($modalAttributes)) ? 'data-bs-toggle="modal" data-bs-target="#productModal"' : ''; echo $modalAttributes; ?>>
+                                <!-- "Yeni" etiketi (eğer ürün yeni ise) -->
                                 <?php if ($urunYeni): ?>
                                     <span class="new">yeni</span>
                                 <?php endif; ?>
+                                
+                                <!-- Ürün resmi -->
                                 <div class="pi_img">
                                     <?php if (!empty($resimURL)): ?>
                                         <img src="<?php echo htmlspecialchars($resimURL, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($urunBaslik, ENT_QUOTES, 'UTF-8'); ?>">
                                     <?php else: ?>
+                                        <!-- Resim yoksa varsayılan resim göster -->
                                         <img src="<?php echo $this->BaseURL('assets/img/no-image.jpg'); ?>" alt="<?php echo htmlspecialchars($urunBaslik, ENT_QUOTES, 'UTF-8'); ?>">
                                     <?php endif; ?>
                                 </div>
+                                
+                                <!-- Ürün adı/kodu -->
                                 <div class="pi_names">
                                     <span data-title="Ürünü İncele">
                                         <i><?php echo htmlspecialchars($urunBaslik, ENT_QUOTES, 'UTF-8'); ?></i>
