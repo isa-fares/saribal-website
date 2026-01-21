@@ -6,6 +6,9 @@
  * @var $assetURL string
  * @var $page string
  */
+//sadece üst kategorileri getir 
+$kategoriler = $this->dbLangSelect("kategori", "aktif = 1 and sil = 0 and ustu = 0", "", "", "ORDER BY sira ASC, id ASC");
+
 ?>
 <div class="navbar-area style-three position-relative" id="navbar">
     <div class="container-fluid">
@@ -28,18 +31,18 @@
                         <li class="menu-item-has-children">
                             <a href="javascript:void(0)">Ürünlerimiz<i class="fa-solid fa-plus"></i></a>
                             <ul class="menu-subs menu-column-1">
-                                <li class="list-item">
-                                    <a href="#">Baskılı Sac</a>
-                                </li>
-                                <li class="list-item">
-                                    <a href="#">Baskılı Lazer Sac</a>
-                                </li>
-                                <li class="list-item">
-                                    <a href="#">Aksesuarlar</a>
-                                </li>
-                                <li class="list-item">
-                                    <a href="#">Lazer Kesim</a>
-                                </li>
+
+                                <?php foreach ($kategoriler as $kategori) { ?>
+                                    <li class="list-item">
+                                        <!-- url kategorinin ilk alt kategorisinin url'i olacak -->
+                                        <?php $altKategoriUrl = $this->dblangSelect("kategori", "aktif = 1 and sil = 0 and ustu = " . $kategori["id"], "", "", "ORDER BY sira ASC , id ASC "); ?>
+                                        <?php if (is_array($altKategoriler) && count($altKategoriler) > 0) { ?>
+                                            <a href="<?= $this->BaseURL("urunler/" . $altKategoriler[0]["url"], $lang, 1); ?>"><?= $kategori["baslik"] ?></a>
+                                        <?php } else { ?>
+                                            <a href="<?= $this->BaseURL("urunler", $lang, 1); ?>"><?= $kategori["baslik"] ?></a>
+                                        <?php } ?>
+                                    </li>
+                                <?php } ?>
                             </ul>
                         </li>
                         <li class="menu-item-has-children">
@@ -60,7 +63,60 @@
                 </nav>
             </div>
             <div class="other-options d-flex flex-wrap align-items-center justify-content-end">
+                <ul class="language-menu" style="list-style: none; padding: 0; margin: 0; display: inline-block;">
+                    <li class="menu-item-has-children" style="position: relative; display: inline-block;">
+                        <a href="javascript:void(0)" style="color: white; text-decoration: none; display: inline-flex; align-items: center;">
+                            <span class="language-icon-wrapper" style="position: relative; display: inline-flex; align-items: center; justify-content: center; width: 80px; height: 50px; border-radius: 10%; background-color: rgba(255, 255, 255, 0.18); transition: all 0.3s ease;">
+                                <i class="fa-light fa-globe" style="color: white; font-size: 20px;"></i>
+                                <span style="color: white; margin-left: 10px;"><?= strtoupper($lang) ?></span>
+
+                            </span>
+                        </a>
+                        <ul class="menu-subs menu-column-1" style="position: absolute; top: 141%; right: 0; min-width: 100px; background: #FFFBF3; opacity: 0; visibility: hidden; transition: all 0.3s ease-in-out; z-index: 500; padding: 0; border: none; outline: none; list-style: none; border-radius: 3px;">
+                            <?php if ($lang != 'tr') : ?>
+                                <li class="list-item">
+                                    <a href="<?= $this->baseURL("index", "tr", 1) ?>" style="padding: 13px 20px; display: block; line-height: 1.6; border-left: 2px solid transparent; border-bottom: 1px solid rgba(38, 38, 54, 0.08); color: var(--titleColor); text-decoration: none;">
+                                        TR
+                                    </a>
+                                </li>
+                            <?php endif; ?>
+                            <?php if ($lang != 'en') : ?>
+                                <li class="list-item">
+                                    <a href="<?= $this->baseURL("index", "en", 1) ?>" style="padding: 13px 20px; display: block; line-height: 1.6; border-left: 2px solid transparent; border-bottom: 1px solid rgba(38, 38, 54, 0.08); color: var(--titleColor); text-decoration: none;">
+                                        EN
+                                    </a>
+                                </li>
+                            <?php endif; ?>
+                            <?php if ($lang != 'ar') : ?>
+                                <li class="list-item">
+                                    <a href="<?= $this->baseURL("index", "ar", 1) ?>" style="padding: 13px 20px; display: block; line-height: 1.6; border-left: 2px solid transparent; border-bottom: none; color: var(--titleColor); text-decoration: none;">
+                                        AR
+                                    </a>
+                                </li>
+                            <?php endif; ?>
+                        </ul>
+                    </li>
+                </ul>
+                <style>
+                    .language-menu li.menu-item-has-children:hover>.menu-subs,
+                    .language-menu li.menu-item-has-children .menu-subs:hover {
+                        margin-top: -7px !important;
+                        opacity: 1 !important;
+                        visibility: visible !important;
+                    }
+
+                    .language-menu .menu-subs li a:hover,
+                    .language-menu .menu-subs li a.active {
+                        color: var(--primaryColor) !important;
+                        border-left-color: var(--primaryColor) !important;
+                    }
+
+                    .language-menu li.menu-item-has-children:hover .language-icon-wrapper {
+                        background-color: var(--primaryColor) !important;
+                    }
+                </style>
                 <div class="option-item d-flex flex-wrap align-items-center">
+
                     <div class="mobile-options position-relative d-lg-none">
                         <button class="dropdown-toggle  text-center bg-transparent border-0 p-0 transition"
                             type="button" data-bs-toggle="dropdown" aria-expanded="true">

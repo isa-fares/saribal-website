@@ -24,10 +24,7 @@ $kategoriTable = "kategori";  // Kategoriler tablosu
 // ============================================
 // Tüm aktif kategorileri getir (ana ve alt kategoriler dahil)
 $tumKategoriler = $this->dbLangSelect($kategoriTable, "aktif = 1 and sil = 0", "", "", "ORDER BY sira ASC, id ASC");
- echo "<pre>";
- print_r($tumKategoriler);
- echo "</pre>";
- exit;
+
 // Ana kategoriler (ustu = 0 veya NULL) ve alt kategoriler (ustu > 0) için diziler
 $anaKategoriler = array();  // Ana kategoriler dizisi
 $altKategoriler = array();  // Alt kategoriler dizisi (ana kategori ID'sine göre gruplanmış)
