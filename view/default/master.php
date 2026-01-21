@@ -78,7 +78,8 @@ $this->inc_file("script", array(
 
 
 
-<body class="lang_<?= $lang ?> <?= ($page == "index") ? "index" : "other" ?>">
+<body class="lang_<?= $lang ?> <?= ($page == "index") ? "index" : "other" ?>" style="direction:<?= ($lang == "ar") ? "rtl" : "ltr" ?>;">
+
     <div class="preloader-area" id="preloader">
         <div class="spinner">
             <div></div>

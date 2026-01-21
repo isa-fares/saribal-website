@@ -63,12 +63,12 @@ $kategoriler = $this->dbLangSelect("kategori", "aktif = 1 and sil = 0 and ustu =
                 </nav>
             </div>
             <div class="other-options d-flex flex-wrap align-items-center justify-content-end">
-                <ul class="language-menu" style="list-style: none; padding: 0; margin: 0; display: inline-block;">
+                <ul class="language-menu" style="list-style: none; padding: 0 15px; margin: 0; display: inline-block;">
                     <li class="menu-item-has-children" style="position: relative; display: inline-block;">
                         <a href="javascript:void(0)" style="color: white; text-decoration: none; display: inline-flex; align-items: center;">
                             <span class="language-icon-wrapper" style="position: relative; display: inline-flex; align-items: center; justify-content: center; width: 80px; height: 50px; border-radius: 10%; background-color: rgba(255, 255, 255, 0.18); transition: all 0.3s ease;">
                                 <i class="fa-light fa-globe" style="color: white; font-size: 20px;"></i>
-                                <span style="color: white; margin-left: 10px;"><?= strtoupper($lang) ?></span>
+                                <span style="color: white; margin: 0 10px;"><?= strtoupper($lang) ?></span>
 
                             </span>
                         </a>
