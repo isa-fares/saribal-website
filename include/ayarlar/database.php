@@ -25,9 +25,9 @@ return [
              'host' =>
                 [
                      'host' => 'localhost',
-                     'dbname' => '',
-                     'user' =>'',
-                     'password' => '',
+                     'dbname' => 'demovmd_saribal',
+                     'user' => 'demovmd_saribal',
+                     'password' => 'F9PPELHjceNuTMvWe95u',
                      'charset' => 'utf8',
                      'driver' => 'pdo_mysql',
                      'debug' => false,
