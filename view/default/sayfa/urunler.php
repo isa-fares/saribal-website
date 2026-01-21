@@ -94,19 +94,19 @@ if ($seciliKategoriID > 0) {
         $baslik = $this->temizle($kategoriVeri["baslik"]);
         $this->sayfaBaslik = $this->temizle($kategoriVeri["baslik"]) . " - " . $this->ayarlar("title_" . $lang);
         // Seçili kategoriye ait aktif ürünleri getir
-        $urunler = $this->dbLangSelect("urun", "aktif = 1 and sil = 0 and baslik <> '' and kid = " . $seciliKategoriID, "resim");
+        $urunler = $this->dbLangSelect("urun", "aktif = 1 and sil = 0 and baslik <> '' and kid = " . $seciliKategoriID, "resim" ,   "", "ORDER BY id DESC");
     } else {
         // Kategori bulunamadı: Tüm ürünleri göster
         $baslik = "Ürünler";
         $this->sayfaBaslik = "Ürünler - " . $this->ayarlar("title_" . $lang);
-        $urunler = $this->dbLangSelect("urun", "aktif = 1 and sil = 0 and baslik <> ''", "resim");
+        $urunler = $this->dbLangSelect("urun", "aktif = 1 and sil = 0 and baslik <> ''", "resim" ,   "", "ORDER BY id DESC");
         $seciliKategoriID = 0;
     }
 } else {
     // Hiçbir kategori seçilmemişse: Tüm aktif ürünleri göster
     $baslik = "Ürünler";
     $this->sayfaBaslik = "Ürünler - " . $this->ayarlar("title_" . $lang);
-    $urunler = $this->dbLangSelect("urun", "aktif = 1 and sil = 0 and baslik <> ''", "resim");
+    $urunler = $this->dbLangSelect("urun", "aktif = 1 and sil = 0 and baslik <> ''", "resim" ,   "", "ORDER BY id DESC");
 }
 
 // ============================================
