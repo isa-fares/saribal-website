@@ -339,7 +339,7 @@ class Urun  extends Settings{
                 }
             }
             
-            // Yeni alanı kontrol et ve ekle
+            // Yeni alanı kontrol et ve ekle - Ana tablo
             try {
                 $knt_yeni = $this->dbConn->tekSorgu("SELECT COUNT(*) as tp FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '" . $this->table . "' AND COLUMN_NAME = 'yeni' AND table_schema = '" . $dbname . "'");
                 $yeni_var = false;
@@ -355,6 +355,27 @@ class Urun  extends Settings{
                 // Hata durumunda manuel eklemeyi dene
                 try {
                     $this->dbConn->manualSql("ALTER TABLE " . $this->table . " ADD COLUMN yeni TINYINT(1) DEFAULT 0");
+                } catch (\Exception $e2) {
+                    // Sütun zaten varsa hata verme, devam et
+                }
+            }
+            
+            // Yeni alanı kontrol et ve ekle - Lang tablosu
+            try {
+                $knt_yeni_lang = $this->dbConn->tekSorgu("SELECT COUNT(*) as tp FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '" . $this->tablelang . "' AND COLUMN_NAME = 'yeni' AND table_schema = '" . $dbname . "'");
+                $yeni_var_lang = false;
+                if (isset($knt_yeni_lang["tp"]) && $knt_yeni_lang["tp"] > 0) {
+                    $yeni_var_lang = true;
+                }
+                
+                if (!$yeni_var_lang) {
+                    // Sütun yoksa ekle
+                    $this->dbConn->manualSql("ALTER TABLE " . $this->tablelang . " ADD COLUMN yeni TINYINT(1) DEFAULT 0");
+                }
+            } catch (\Exception $e) {
+                // Hata durumunda manuel eklemeyi dene
+                try {
+                    $this->dbConn->manualSql("ALTER TABLE " . $this->tablelang . " ADD COLUMN yeni TINYINT(1) DEFAULT 0");
                 } catch (\Exception $e2) {
                     // Sütun zaten varsa hata verme, devam et
                 }
@@ -404,6 +425,7 @@ class Urun  extends Settings{
                     'kid'=> ($this->_POST('kid')) ? $this->_POST('kid'):0,
                     //'kod'=>$this->kirlet($this->_POST('kod')),
                     'detay'=>$this->kirlet($this->_POST('detay',$dil)),
+                    'yeni'=> ($this->_POST('yeni')) ? $this->_POST('yeni'):0,
                     'ozellikler' => $ozellikler_json,
                     'dil' => $dil
                 );
@@ -501,8 +523,9 @@ class Urun  extends Settings{
         $durum = ((isset($_GET['durum'])) ? $_GET['durum'] : null);
         $id = ((isset($_GET['id'])) ? $_GET['id'] : null);
         $tr_duzenle = $this->dbConn->update($this->table,array('yeni'=>$durum),$id);
+        $lang_duzenle = $this->dbConn->langUpdate($this->tablelang,array('yeni'=>$durum),$id);
 
-        if($tr_duzenle) echo 1; else echo 0;
+        if($tr_duzenle && $lang_duzenle) echo 1; else echo 0;
         exit();
 
     }
