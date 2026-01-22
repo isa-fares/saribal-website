@@ -19,35 +19,11 @@ $table = "urun";              // Ürünler tablosu
 $sayfaAdi = "urunler";        // Sayfa adı (URL için) - pagination için saklanıyor
 $kategoriTable = "kategori";  // Kategoriler tablosu
 
-$start_time = microtime(true);
-$start_memory = memory_get_usage();
-
-// #region agent log
-$logPath = __DIR__ . '/../../.cursor/debug.log';
-$logWrite = function($msg, $data = []) use ($logPath, $start_time) {
-    $log = json_encode([
-        'id' => 'log_' . time() . '_' . uniqid(),
-        'timestamp' => round((microtime(true) - $start_time) * 1000, 2),
-        'location' => 'urunler.php',
-        'message' => $msg,
-        'data' => $data,
-        'sessionId' => 'debug-session',
-        'runId' => 'run1'
-    ]) . "\n";
-    @file_put_contents($logPath, $log, FILE_APPEND);
-};
-$logWrite('Sayfa başlangıcı', ['memory' => round($start_memory / 1024 / 1024, 2) . ' MB']);
-// #endregion
-
 // ============================================
 // KATEGORİLERİ GETİR VE AYIR
 // ============================================
 // Tüm aktif kategorileri getir (ana ve alt kategoriler dahil)
-$kat_start = microtime(true);
 $tumKategoriler = $this->dbLangSelect($kategoriTable, "aktif = 1 and sil = 0", "", "", "ORDER BY sira ASC, id ASC");
-// #region agent log
-$logWrite('Kategoriler getirildi', ['time' => round((microtime(true) - $kat_start) * 1000, 2) . ' ms', 'count' => is_array($tumKategoriler) ? count($tumKategoriler) : 0]);
-// #endregion
 
 // Ana kategoriler (ustu = 0 veya NULL) ve alt kategoriler (ustu > 0) için diziler
 $anaKategoriler = array();  // Ana kategoriler dizisi
@@ -80,7 +56,7 @@ if (is_array($tumKategoriler)) {
 // ============================================
 // SEÇİLİ KATEGORİYİ BELİRLE
 // ============================================
-// Hangi kategorinin seçili olduğunu belirle (URL'den veya varsayılan olarak ilk alt kategori)
+// Hangi kategorinin seçili olduğunu belirle 
 $seciliKategoriID = 0;
 
 if (!empty($katurl) && $id > 0) {
@@ -98,7 +74,7 @@ if (!empty($katurl) && $id > 0) {
                 // İlk alt kategoriyi bul ve varsayılan olarak seç
                 $ilkAltKat = $anaKat['alt_kategoriler'][0];
                 $seciliKategoriID = $this->getID($ilkAltKat);
-                break; // İlk alt kategoriyi bulduktan sonra döngüden çık
+                break;
             }
         }
     }
@@ -107,10 +83,9 @@ if (!empty($katurl) && $id > 0) {
 // ============================================
 // ÜRÜNLERİ GETİR (PAGINATION İÇİN TÜM ÜRÜNLER)
 // ============================================
-// Tüm ürünleri getir (pagination için LIMIT kullanmıyoruz)
+// Tüm ürünleri getir
 $all_urunler = array();
 $kategoriVeri = null; // Pagination için kategori verisini sakla
-$urun_start = microtime(true);
 
 if ($seciliKategoriID > 0) {
     $kategoriVeri = $this->dbLangSelectRow($kategoriTable, array("id" => $seciliKategoriID, "master_id" => $seciliKategoriID));
@@ -131,12 +106,9 @@ if ($seciliKategoriID > 0) {
     $this->sayfaBaslik = "Ürünler - " . $this->ayarlar("title_" . $lang);
     $all_urunler = $this->dbLangSelect("urun", "aktif = 1 and sil = 0 and baslik <> ''", "resim", "", "ORDER BY id DESC");
 }
-// #region agent log
-$logWrite('Ürünler getirildi', ['time' => round((microtime(true) - $urun_start) * 1000, 2) . ' ms', 'count' => is_array($all_urunler) ? count($all_urunler) : 0, 'memory' => round((memory_get_usage() - $start_memory) / 1024 / 1024, 2) . ' MB']);
-// #endregion
 
 // ============================================
-// PAGINATION AYARLARI (Basitleştirilmiş - blog.php gibi)
+// PAGINATION AYARLARI 
 // ============================================
 $sayfaLimit = 12; // Her sayfada 12 ürün göster
 
@@ -147,37 +119,9 @@ list($gecerli, $sayfaLimit, $toplamSayfa, $sayfa, $showlist) = $this->sayfalama(
 $urunler = array_slice($all_urunler, $gecerli, $sayfaLimit);
 
 // ============================================
-// KATEGORİ BAŞINA ÜRÜN SAYISINI HESAPLA (OPTİMİZE EDİLMİŞ - COUNT QUERY)
+// KATEGORİ BAŞINA ÜRÜN SAYISINI HESAPLA
 // ============================================
-$kategoriUrunSayisi = array();
-$lang = $this->pageLang;
-if ($lang == "") $lang = "tr";
-
-// COUNT query kullanarak çok daha hızlı hesaplama
-if ($lang != "tr") {
-    $countQuery = "SELECT kid, COUNT(*) as sayi FROM urun_lang WHERE dil = '$lang' and aktif = 1 and sil = 0 and baslik <> '' and kid > 0 GROUP BY kid";
-} else {
-    $countQuery = "SELECT kid, COUNT(*) as sayi FROM urun WHERE aktif = 1 and sil = 0 and baslik <> '' and kid > 0 GROUP BY kid";
-}
-
-$count_start = microtime(true);
-$kategoriSayilari = $this->sorgu($countQuery);
-// #region agent log
-$logWrite('COUNT query tamamlandı', ['time' => round((microtime(true) - $count_start) * 1000, 2) . ' ms', 'result_count' => is_array($kategoriSayilari) ? count($kategoriSayilari) : 0]);
-// #endregion
-if (is_array($kategoriSayilari)) {
-    foreach ($kategoriSayilari as $sayi) {
-        $kid = intval($sayi['kid']);
-        $kategoriUrunSayisi[$kid] = intval($sayi['sayi']);
-    }
-}
-// #region agent log
-$end_time = microtime(true);
-$total_time = round(($end_time - $start_time) * 1000, 2);
-$end_memory = memory_get_usage();
-$memory_used = round(($end_memory - $start_memory) / 1024 / 1024, 2);
-$logWrite('Sayfa tamamlandı', ['total_time' => $total_time . ' ms', 'memory_used' => $memory_used . ' MB', 'urun_count' => is_array($all_urunler) ? count($all_urunler) : 0, 'urunler_displayed' => is_array($urunler) ? count($urunler) : 0]);
-// #endregion
+$kategoriUrunSayisi = $this->getKategoriUrunSayisi($table);
 
 ?>
 <div class="breadcrumb-area position-relative z-1">

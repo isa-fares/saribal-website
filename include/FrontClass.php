@@ -1373,6 +1373,44 @@ class FrontClass extends Mail
     }
 
     /**
+     * Kategori başına ürün sayısını hesaplar ve döndürür
+     * 
+     * @param string $table Ürün tablosu adı (varsayılan: "urun")
+     * @param string|null $lang Dil kodu (null ise $this->pageLang kullanılır)
+     * @return array Kategori ID'si => Ürün sayısı formatında dizi
+     */
+    public function getKategoriUrunSayisi($table = "urun", $lang = null){
+        // Dil belirlenmesi
+        if ($lang === null) {
+            $lang = $this->pageLang;
+        }
+        if ($lang == "") {
+            $lang = "tr";
+        }
+
+        // COUNT query oluştur
+        if ($lang != "tr") {
+            $countQuery = "SELECT kid, COUNT(*) as sayi FROM {$table}_lang WHERE dil = '$lang' and aktif = 1 and sil = 0 and baslik <> '' and kid > 0 GROUP BY kid";
+        } else {
+            $countQuery = "SELECT kid, COUNT(*) as sayi FROM {$table} WHERE aktif = 1 and sil = 0 and baslik <> '' and kid > 0 GROUP BY kid";
+        }
+
+        // Query çalıştır
+        $kategoriSayilari = $this->sorgu($countQuery);
+        
+        // Sonuçları diziye çevir
+        $kategoriUrunSayisi = array();
+        if (is_array($kategoriSayilari)) {
+            foreach ($kategoriSayilari as $sayi) {
+                $kid = intval($sayi['kid']);
+                $kategoriUrunSayisi[$kid] = intval($sayi['sayi']);
+            }
+        }
+
+        return $kategoriUrunSayisi;
+    }
+
+    /**
      * @param $user_id
      */
     public function getCartProducts($user_id){
