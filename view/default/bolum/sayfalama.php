@@ -20,59 +20,94 @@ if ($toplamSayfa > 1){
     }
 ?>
 
-    <nav class="pagination-nav pdt-30">
-        <ul class="pagination-list">
-
-
+    <div class="pagination-area">
+        <ul class="page-nav d-flex flex-wrap align-items-center justify-content-center list-unstyled mb-0">
             <?php
+            // Previous button
             if( $sayfa > 1 )
             {
                 $onceki = $pageUrl."/".($sayfa - 1);
                 if ($urlType != ""){
                     $onceki = $pageUrl."?page=".($sayfa - 1).((!empty($all_queries)) ? "&".$all_queries : '');
                 }
-
-                echo '<li class="pagination-left-arrow"><a class="prevposts-link" href="'.$onceki.'"><i class="fa fa-angle-left"></i><span></a></li>';
+                ?>
+                <li>
+                    <a class="page-numbers" href="<?=$onceki?>" title="Önceki Sayfa">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                </li>
+                <?php
             }
-            ?>
-
-
-            <?php
-            for( $i = $sayfa - 4; $i < $sayfa + 5; $i++ )
-            {
-                if( $i > 0 && $i <= $toplamSayfa )
-                {
-                    $url = $pageUrl."/".$i;
-
-                    if ($urlType != ""){
-                        $url = $pageUrl."?page=".$i.((!empty($all_queries)) ? "&".$all_queries : '');
-                    }
-            ?>
-
-                    <li class="<?=($i == $sayfa) ? 'active' : ''?>"><a class="page-numbers" href="<?=$url?>"><?=$i?></a></li>
-
-            <?php
+            
+            // Page numbers
+            // Show first page if not in range
+            if ($sayfa > 5) {
+                $url = $pageUrl."/1";
+                if ($urlType != ""){
+                    $url = $pageUrl."?page=1".((!empty($all_queries)) ? "&".$all_queries : '');
+                }
+                ?>
+                <li>
+                    <a class="page-numbers" href="<?=$url?>">1</a>
+                </li>
+                <?php
+                if ($sayfa > 6) {
+                    ?>
+                    <li><span class="page-numbers dots">...</span></li>
+                    <?php
                 }
             }
-            ?>
-
-
-            <?php
+            
+            // Show page numbers around current page
+            for( $i = max(1, $sayfa - 2); $i <= min($toplamSayfa, $sayfa + 2); $i++ )
+            {
+                $url = $pageUrl."/".$i;
+                if ($urlType != ""){
+                    $url = $pageUrl."?page=".$i.((!empty($all_queries)) ? "&".$all_queries : '');
+                }
+                ?>
+                <li>
+                    <a class="page-numbers <?=($i == $sayfa) ? 'active' : ''?>" href="<?=$url?>"><?=$i?></a>
+                </li>
+                <?php
+            }
+            
+            // Show last page if not in range
+            if ($sayfa < $toplamSayfa - 3) {
+                if ($sayfa < $toplamSayfa - 4) {
+                    ?>
+                    <li><span class="page-numbers dots">...</span></li>
+                    <?php
+                }
+                $url = $pageUrl."/".$toplamSayfa;
+                if ($urlType != ""){
+                    $url = $pageUrl."?page=".$toplamSayfa.((!empty($all_queries)) ? "&".$all_queries : '');
+                }
+                ?>
+                <li>
+                    <a class="page-numbers" href="<?=$url?>"><?=$toplamSayfa?></a>
+                </li>
+                <?php
+            }
+            
+            // Next button
             if( $sayfa != $toplamSayfa )
             {
-
                 $sonraki = $pageUrl."/".($sayfa + 1);
                 if ($urlType != ""){
                     $sonraki = $pageUrl."?page=".($sayfa + 1).((!empty($all_queries)) ? "&".$all_queries : '');
                 }
-
-                echo '<li class="pagination-right-arrow"><a href="'.$sonraki.'"><i class="fa fa-angle-right"></i></a></li>';
-
+                ?>
+                <li>
+                    <a class="page-numbers" href="<?=$sonraki?>" title="Sonraki Sayfa">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                </li>
+                <?php
             }
             ?>
-
         </ul>
-    </nav>
+    </div>
 
 
 

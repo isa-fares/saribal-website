@@ -16,14 +16,38 @@
 // TABLO VE SAYFA TANIMLAMALARI
 // ============================================
 $table = "urun";              // Ürünler tablosu
-$sayfa = "urunler";           // Sayfa adı (URL için)
+$sayfaAdi = "urunler";        // Sayfa adı (URL için) - pagination için saklanıyor
 $kategoriTable = "kategori";  // Kategoriler tablosu
+
+$start_time = microtime(true);
+$start_memory = memory_get_usage();
+
+// #region agent log
+$logPath = __DIR__ . '/../../.cursor/debug.log';
+$logWrite = function($msg, $data = []) use ($logPath, $start_time) {
+    $log = json_encode([
+        'id' => 'log_' . time() . '_' . uniqid(),
+        'timestamp' => round((microtime(true) - $start_time) * 1000, 2),
+        'location' => 'urunler.php',
+        'message' => $msg,
+        'data' => $data,
+        'sessionId' => 'debug-session',
+        'runId' => 'run1'
+    ]) . "\n";
+    @file_put_contents($logPath, $log, FILE_APPEND);
+};
+$logWrite('Sayfa başlangıcı', ['memory' => round($start_memory / 1024 / 1024, 2) . ' MB']);
+// #endregion
 
 // ============================================
 // KATEGORİLERİ GETİR VE AYIR
 // ============================================
 // Tüm aktif kategorileri getir (ana ve alt kategoriler dahil)
+$kat_start = microtime(true);
 $tumKategoriler = $this->dbLangSelect($kategoriTable, "aktif = 1 and sil = 0", "", "", "ORDER BY sira ASC, id ASC");
+// #region agent log
+$logWrite('Kategoriler getirildi', ['time' => round((microtime(true) - $kat_start) * 1000, 2) . ' ms', 'count' => is_array($tumKategoriler) ? count($tumKategoriler) : 0]);
+// #endregion
 
 // Ana kategoriler (ustu = 0 veya NULL) ve alt kategoriler (ustu > 0) için diziler
 $anaKategoriler = array();  // Ana kategoriler dizisi
@@ -34,7 +58,7 @@ if (is_array($tumKategoriler)) {
     foreach ($tumKategoriler as $kat) {
         $katID = $this->getID($kat);  // Dil desteği ile ID al (getID fonksiyonu kullanılıyor)
         $ustu = isset($kat['ustu']) ? intval($kat['ustu']) : 0;  // Üst kategori ID'si
-        
+
         if ($ustu == 0 || $ustu == null) {
             // Ana kategori (üst kategori yok)
             $anaKategoriler[$katID] = $kat;
@@ -44,7 +68,7 @@ if (is_array($tumKategoriler)) {
             $altKategoriler[$ustu][] = $kat;  // Üst kategori ID'sine göre grupla
         }
     }
-    
+
     // Alt kategorileri ilgili ana kategorilere ekle
     foreach ($altKategoriler as $ustID => $altlar) {
         if (isset($anaKategoriler[$ustID])) {
@@ -62,11 +86,9 @@ $seciliKategoriID = 0;
 if (!empty($katurl) && $id > 0) {
     // Durum 1: URL'den kategori bilgisi geldi (örn: urunler/kategori-url-6.html)
     $seciliKategoriID = intval($id);
-    
 } else if ($kid > 0) {
     // Durum 2: Direkt kid parametresi var (GET parametresi)
     $seciliKategoriID = intval($kid);
-    
 } else {
     // Durum 3: Hiçbir kategori seçilmemişse, ilk alt kategoriyi varsayılan olarak seç
     if (is_array($anaKategoriler) && count($anaKategoriler) > 0) {
@@ -83,54 +105,46 @@ if (!empty($katurl) && $id > 0) {
 }
 
 // ============================================
-// ÜRÜNLERİ GETİR
+// ÜRÜNLERİ GETİR (PAGINATION İÇİN TÜM ÜRÜNLER)
 // ============================================
-if ($seciliKategoriID > 0) {
-    // Kategori seçilmişse: O kategoriye ait ürünleri getir
-    $kategoriVeri = $this->dbLangSelectRow($kategoriTable, array("id" => $seciliKategoriID, "master_id" => $seciliKategoriID));
-    
-    if (is_array($kategoriVeri)) {
-        // Kategori bulundu: Kategori bilgilerini ve ürünlerini al
-        $baslik = $this->temizle($kategoriVeri["baslik"]);
-        $this->sayfaBaslik = $this->temizle($kategoriVeri["baslik"]) . " - " . $this->ayarlar("title_" . $lang);
-        // Seçili kategoriye ait aktif ürünleri getir
-        $urunler = $this->dbLangSelect("urun", "aktif = 1 and sil = 0 and baslik <> '' and kid = " . $seciliKategoriID, "resim" ,   "", "ORDER BY id DESC");
-    } else {
-        // Kategori bulunamadı: Tüm ürünleri göster
-        $baslik = "Ürünler";
-        $this->sayfaBaslik = "Ürünler - " . $this->ayarlar("title_" . $lang);
-        $urunler = $this->dbLangSelect("urun", "aktif = 1 and sil = 0 and baslik <> ''", "resim" ,   "", "ORDER BY id DESC");
-        $seciliKategoriID = 0;
-    }
-} else {
-    // Hiçbir kategori seçilmemişse: Tüm aktif ürünleri göster
-    $baslik = "Ürünler";
-    $this->sayfaBaslik = "Ürünler - " . $this->ayarlar("title_" . $lang);
-    $urunler = $this->dbLangSelect("urun", "aktif = 1 and sil = 0 and baslik <> ''", "resim" ,   "", "ORDER BY id DESC");
-}
-// ============================================
-// ÜRÜNLERİ GETİR (OPTİMİZE EDİLMİŞ)
-// ============================================
-$maxUrunLimit = "LIMIT 100"; // Maksimum 1000 ürün göster (performans için)
+// Tüm ürünleri getir (pagination için LIMIT kullanmıyoruz)
+$all_urunler = array();
+$kategoriVeri = null; // Pagination için kategori verisini sakla
+$urun_start = microtime(true);
 
 if ($seciliKategoriID > 0) {
     $kategoriVeri = $this->dbLangSelectRow($kategoriTable, array("id" => $seciliKategoriID, "master_id" => $seciliKategoriID));
-    
+
     if (is_array($kategoriVeri)) {
         $baslik = $this->temizle($kategoriVeri["baslik"]);
         $this->sayfaBaslik = $this->temizle($kategoriVeri["baslik"]) . " - " . $this->ayarlar("title_" . $lang);
-        $urunler = $this->dbLangSelect("urun", "aktif = 1 and sil = 0 and baslik <> '' and kid = " . $seciliKategoriID, "resim", $maxUrunLimit, "ORDER BY id DESC");
+        $all_urunler = $this->dbLangSelect("urun", "aktif = 1 and sil = 0 and baslik <> '' and kid = " . $seciliKategoriID, "resim", "", "ORDER BY id DESC");
     } else {
         $baslik = "Ürünler";
         $this->sayfaBaslik = "Ürünler - " . $this->ayarlar("title_" . $lang);
-        $urunler = $this->dbLangSelect("urun", "aktif = 1 and sil = 0 and baslik <> ''", "resim", $maxUrunLimit, "ORDER BY id DESC");
+        $all_urunler = $this->dbLangSelect("urun", "aktif = 1 and sil = 0 and baslik <> ''", "resim", "", "ORDER BY id DESC");
         $seciliKategoriID = 0;
+        $kategoriVeri = null;
     }
 } else {
     $baslik = "Ürünler";
     $this->sayfaBaslik = "Ürünler - " . $this->ayarlar("title_" . $lang);
-    $urunler = $this->dbLangSelect("urun", "aktif = 1 and sil = 0 and baslik <> ''", "resim", $maxUrunLimit, "ORDER BY id DESC");
+    $all_urunler = $this->dbLangSelect("urun", "aktif = 1 and sil = 0 and baslik <> ''", "resim", "", "ORDER BY id DESC");
 }
+// #region agent log
+$logWrite('Ürünler getirildi', ['time' => round((microtime(true) - $urun_start) * 1000, 2) . ' ms', 'count' => is_array($all_urunler) ? count($all_urunler) : 0, 'memory' => round((memory_get_usage() - $start_memory) / 1024 / 1024, 2) . ' MB']);
+// #endregion
+
+// ============================================
+// PAGINATION AYARLARI (Basitleştirilmiş - blog.php gibi)
+// ============================================
+$sayfaLimit = 12; // Her sayfada 12 ürün göster
+
+// sayfalama fonksiyonunu kullan (blog.php'deki gibi)
+list($gecerli, $sayfaLimit, $toplamSayfa, $sayfa, $showlist) = $this->sayfalama($all_urunler, $sayfaLimit);
+
+// Pagination'a göre ürünleri kes (array_slice kullanarak)
+$urunler = array_slice($all_urunler, $gecerli, $sayfaLimit);
 
 // ============================================
 // KATEGORİ BAŞINA ÜRÜN SAYISINI HESAPLA (OPTİMİZE EDİLMİŞ - COUNT QUERY)
@@ -146,13 +160,24 @@ if ($lang != "tr") {
     $countQuery = "SELECT kid, COUNT(*) as sayi FROM urun WHERE aktif = 1 and sil = 0 and baslik <> '' and kid > 0 GROUP BY kid";
 }
 
+$count_start = microtime(true);
 $kategoriSayilari = $this->sorgu($countQuery);
+// #region agent log
+$logWrite('COUNT query tamamlandı', ['time' => round((microtime(true) - $count_start) * 1000, 2) . ' ms', 'result_count' => is_array($kategoriSayilari) ? count($kategoriSayilari) : 0]);
+// #endregion
 if (is_array($kategoriSayilari)) {
     foreach ($kategoriSayilari as $sayi) {
         $kid = intval($sayi['kid']);
         $kategoriUrunSayisi[$kid] = intval($sayi['sayi']);
     }
 }
+// #region agent log
+$end_time = microtime(true);
+$total_time = round(($end_time - $start_time) * 1000, 2);
+$end_memory = memory_get_usage();
+$memory_used = round(($end_memory - $start_memory) / 1024 / 1024, 2);
+$logWrite('Sayfa tamamlandı', ['total_time' => $total_time . ' ms', 'memory_used' => $memory_used . ' MB', 'urun_count' => is_array($all_urunler) ? count($all_urunler) : 0, 'urunler_displayed' => is_array($urunler) ? count($urunler) : 0]);
+// #endregion
 
 ?>
 <div class="breadcrumb-area position-relative z-1">
@@ -161,12 +186,12 @@ if (is_array($kategoriSayilari)) {
     <div class="container-fluid px-xxl-5">
         <div class="row">
             <div class="col-md-10 offset-md-1 text-center">
-                <h2 class="section-title style-one fw-black text-white"><?=  $baslik  ?></h2>
+                <h2 class="section-title style-one fw-black text-white"><?= $baslik  ?></h2>
                 <ul class="br-menu list-unstyled">
                     <li><a href="<?= $this->BaseURL('index.html', $lang, 1); ?>"><img
                                 src="https://templates.envytheme.com/renius/default/assets/img/icons/home-icon.svg"
                                 alt="Icon">Anasayfa</a></li>
-                    <li><a href="<?= $this->BaseURL($sayfa . '.html', $lang, 1); ?>">Ürünlerimiz</a></li>
+                    <li><a href="<?= $this->BaseURL($sayfaAdi . '.html', $lang, 1); ?>">Ürünlerimiz</a></li>
                     <?php if ($seciliKategoriID > 0): ?>
                         <?php
                         $kategoriVeri = $this->dbLangSelectRow($kategoriTable, array("id" => $seciliKategoriID, "master_id" => $seciliKategoriID));
@@ -189,68 +214,22 @@ if (is_array($kategoriSayilari)) {
 <div class="container ptb-120 product_lister">
     <div class="row">
         <div class="col-lg-3">
-            <div class="sidebar-widget">
-                <h3 class="sidebar-widget-title">Kategoriler</h3>
-                <ul class="sidebar-widget-list">
-                    <?php if (is_array($anaKategoriler) && count($anaKategoriler) > 0): ?>
-                        <?php foreach ($anaKategoriler as $anaKat): ?>
-                            <?php
-                            // ============================================
-                            // ANA KATEGORİ BİLGİLERİNİ HAZIRLA
-                            // ============================================
-                            $anaKatID = $this->getID($anaKat);  // Dil desteği ile ID al
-                            $anaKatBaslik = isset($anaKat['baslik']) ? $this->temizle($anaKat['baslik']) : '';
-                            $anaKatURL = isset($anaKat['url']) ? $anaKat['url'] : '';
-                            
-                            // URL oluştur: URL zaten ID içeriyor (örn: 1000x1000-mm-6), direkt kullan
-                            // BaseURL fonksiyonu otomatik olarak .html ekler
-                            $anaKatLink = $this->BaseURL($sayfa . "/" . $anaKatURL, $lang, 1);
-                            
-                            ?>
-                            <li>
-                                <!-- Ana kategori linki -->
-                                <a href="<?php echo $anaKatLink; ?>" <?php echo ($seciliKategoriID == $anaKatID) ? 'class="active"' : ''; ?>>
-                                    <?php echo $anaKatBaslik; ?>
-                                </a>
-                                
-                                <?php if (isset($anaKat['alt_kategoriler']) && is_array($anaKat['alt_kategoriler']) && count($anaKat['alt_kategoriler']) > 0): ?>
-                                    <!-- Alt kategoriler listesi -->
-                                    <ul>
-                                        <?php foreach ($anaKat['alt_kategoriler'] as $altKat): ?>
-                                            <?php
-                                            // ============================================
-                                            // ALT KATEGORİ BİLGİLERİNİ HAZIRLA
-                                            // ============================================
-                                            $altKatID = $this->getID($altKat);  // Dil desteği ile ID al
-                                            $altKatBaslik = isset($altKat['baslik']) ? $this->temizle($altKat['baslik']) : '';
-                                            $altKatURL = isset($altKat['url']) ? $altKat['url'] : '';
-                                            
-                                            // URL oluştur: URL zaten ID içeriyor (örn: 1000x1000-mm-6), direkt kullan
-                                            $altKatLink = $this->BaseURL($sayfa . "/" . $altKatURL, $lang, 1);
-                                            
-                                            // Bu alt kategoriye ait ürün sayısını al
-                                            $altUrunSayisi = isset($kategoriUrunSayisi[$altKatID]) ? $kategoriUrunSayisi[$altKatID] : 0;
-                                            ?>
-                                            <li>
-                                                <!-- Alt kategori linki ve ürün sayısı -->
-                                                <a href="<?php echo $altKatLink; ?>" <?php echo ($seciliKategoriID == $altKatID) ? 'class="active"' : ''; ?>>
-                                                    <?php echo $altKatBaslik; ?>
-                                                    <?php if ($altUrunSayisi > 0): ?>
-                                                        <span>(<?php echo $altUrunSayisi; ?>)</span>
-                                                    <?php endif; ?>
-                                                </a>
-                                            </li>
-                                        <?php endforeach; ?>
-                                    </ul>
-                                <?php endif; ?>
-                            </li>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <!-- Kategori bulunamadı durumu -->
-                        <li><a href="#">Kategori bulunamadı</a></li>
-                    <?php endif; ?>
-                </ul>
-            </div>
+            <?php
+            // ============================================
+            // SIDEBAR İÇİN VERİ HAZIRLAMA
+            // ============================================
+            // sidebar.php için gerekli parametreleri hazırla
+            $sidebarParam = array(
+                "anaKategoriler" => $anaKategoriler,        // Ana kategoriler listesi (alt_kategoriler içerir)
+                "seciliKategoriID" => $seciliKategoriID,   // Seçili kategori ID'si
+                "sayfa" => $sayfaAdi,                      // Sayfa adı: "urunler"
+                "lang" => $lang,                            // Aktif dil
+                "kategoriUrunSayisi" => $kategoriUrunSayisi // Her kategori için ürün sayısı dizisi
+            );
+
+            // sidebar.php dosyasını kullan
+            $this->sidebar($sidebarParam);
+            ?>
         </div>
         <!-- ürünleri listele -->
         <div class="col-lg-9">
@@ -266,7 +245,7 @@ if (is_array($kategoriSayilari)) {
                         $urunResim = isset($urun['resim']) && !empty($urun['resim']) ? $urun['resim'] : '';
                         $urunYeni = isset($urun['yeni']) && $urun['yeni'] == 1 ? true : false;  // "Yeni" ürün mü?
                         $urunOzellikler = isset($urun['ozellikler']) && !empty($urun['ozellikler']) ? html_entity_decode($urun['ozellikler'], ENT_QUOTES, 'UTF-8') : '';
-                        
+
                         // ============================================
                         // RESİM URL'İNİ OLUŞTUR (ORİJİNAL BOYUTTA)
                         // ============================================
@@ -287,7 +266,7 @@ if (is_array($kategoriSayilari)) {
                                 }
                             }
                         }
-                        
+
                         // ============================================
                         // ÜRÜN ÖZELLİKLERİNİ PARSE ET (JSON)
                         // ============================================
@@ -295,29 +274,29 @@ if (is_array($kategoriSayilari)) {
                         $ozelliklerData = null;
                         $dataColumns = '[]';  // Modal için kolonlar (JSON string)
                         $dataRows = '[]';     // Modal için satırlar (JSON string)
-                        
+
                         if (!empty($urunOzellikler)) {
                             // JSONGet fonksiyonu ile JSON'u parse et
                             $ozelliklerData = $this->jsonGet($urunOzellikler);
-                            
+
                             if (is_array($ozelliklerData) && isset($ozelliklerData['kolonlar']) && isset($ozelliklerData['satirlar'])) {
                                 // Kolon ve satır verilerini JSON string'e çevir (Modal için)
                                 $dataColumns = json_encode($ozelliklerData['kolonlar'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                                 $dataRows = json_encode($ozelliklerData['satirlar'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                             }
                         }
-                        
+
                         // ============================================
                         // MODAL İÇİN DATA ATTRIBUTE'LARINI HAZIRLA
                         // ============================================
                         // Bootstrap Modal'a gönderilecek veriler
                         $modalAttributes = '';
-                        
+
                         if (!empty($resimURL)) {
                             $modalAttributes .= ' data-img="' . htmlspecialchars($resimURL, ENT_QUOTES, 'UTF-8') . '"';
                         }
                         $modalAttributes .= ' data-code="' . htmlspecialchars($urunBaslik, ENT_QUOTES, 'UTF-8') . '"';
-                        
+
                         // Özellikler varsa modal'a ekle
                         if (!empty($dataColumns) && $dataColumns != '[]') {
                             $modalAttributes .= ' data-columns=\'' . htmlspecialchars($dataColumns, ENT_QUOTES, 'UTF-8') . '\'';
@@ -328,12 +307,13 @@ if (is_array($kategoriSayilari)) {
                         ?>
                         <!-- Ürün kartı -->
                         <div class="col-lg-3 col-md-4 col-6">
-                            <div class="product_item_card" <?php echo (!empty($modalAttributes)) ? 'data-bs-toggle="modal" data-bs-target="#productModal"' : ''; echo $modalAttributes; ?>>
+                            <div class="product_item_card" <?php echo (!empty($modalAttributes)) ? 'data-bs-toggle="modal" data-bs-target="#productModal"' : '';
+                                                            echo $modalAttributes; ?>>
                                 <!-- "Yeni" etiketi (eğer ürün yeni ise) -->
                                 <?php if ($urunYeni): ?>
                                     <span class="new">yeni</span>
                                 <?php endif; ?>
-                                
+
                                 <!-- Ürün resmi -->
                                 <div class="pi_img">
                                     <?php if (!empty($resimURL)): ?>
@@ -343,7 +323,7 @@ if (is_array($kategoriSayilari)) {
                                         <img src="<?php echo $this->BaseURL('assets/img/no-image.jpg'); ?>" alt="<?php echo htmlspecialchars($urunBaslik, ENT_QUOTES, 'UTF-8'); ?>">
                                     <?php endif; ?>
                                 </div>
-                                
+
                                 <!-- Ürün adı/kodu -->
                                 <div class="pi_names">
                                     <span data-title="Ürünü İncele">
@@ -354,6 +334,37 @@ if (is_array($kategoriSayilari)) {
                         </div>
                     <?php endforeach; ?>
                 </div>
+                
+                <!-- Pagination -->
+                <?php if ($toplamSayfa > 1): ?>
+                    <div class="row mt-50">
+                        <div class="col-12">
+                            <div class="pagination-wrapper text-center">
+                                <?php
+                                // Pagination URL'i hazırla
+                                // BaseURL($url, $lang, 1) otomatik olarak .html ekler
+                                // sayfalama.php /2 ekler, bu yüzden URL format: urunler.html/2 olmalı
+                                $pageURL = $this->BaseURL($sayfaAdi, $lang, 1);
+                                
+                                if ($seciliKategoriID > 0 && isset($kategoriVeri) && is_array($kategoriVeri)) {
+                                    $kategoriURL = isset($kategoriVeri['url']) ? $kategoriVeri['url'] : '';
+                                    if (!empty($kategoriURL)) {
+                                        // Kategori URL format: urunler/kategori-url.html/2
+                                        // BaseURL otomatik olarak .html ekler
+                                        $pageURL = $this->BaseURL($sayfaAdi . "/" . $kategoriURL, $lang, 1);
+                                    }
+                                }
+                                
+                                $this->sayfalamaButon(array(
+                                    "toplamSayfa" => $toplamSayfa,
+                                    "sayfa" => $sayfa,  // $sayfa burada pagination sayfa numarası (1, 2, 3...)
+                                    "pageURL" => $pageURL,
+                                ));
+                                ?>
+                            </div>
+                        </div>
+                    </div>
+                <?php endif; ?>
             <?php else: ?>
                 <div class="alert alert-info">
                     <p>Bu kategoride henüz ürün bulunmamaktadır.</p>
@@ -413,10 +424,10 @@ if (is_array($kategoriSayilari)) {
      */
     document.addEventListener('DOMContentLoaded', function() {
         const modalElement = document.getElementById('productModal');
-        
+
         // Modal elementi yoksa çık
         if (!modalElement) return;
-        
+
         const bsModal = new bootstrap.Modal(modalElement);
 
         // Modal açıldığında verileri yükle
@@ -444,21 +455,21 @@ if (is_array($kategoriSayilari)) {
             // Kolon ve satır verilerini al
             const colsAttr = btn.getAttribute('data-columns');
             const rowsAttr = btn.getAttribute('data-rows');
-            
+
             // Tablo başlığını ve gövdesini hazırla
             const thead = document.getElementById('mHead');
             const tbody = document.getElementById('mBody');
-            
+
             // Eğer kolon ve satır verileri varsa tabloyu oluştur
             if (colsAttr && rowsAttr && colsAttr !== '[]' && rowsAttr !== '[]') {
                 try {
                     // JSON string'leri parse et
                     const cols = JSON.parse(colsAttr);
                     const rows = JSON.parse(rowsAttr);
-                    
+
                     // Kolon başlıklarını oluştur
                     thead.innerHTML = '<tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr>';
-                    
+
                     // Satırları oluştur
                     // rows bir dizi nesne olduğu için, her nesneyi kolon sırasına göre diziye çevir
                     tbody.innerHTML = rows.map(row => {

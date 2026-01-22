@@ -1753,6 +1753,82 @@ body {
     filter: brightness(0) invert(1);
 }
 
+/* Pagination Area - Modern Style */
+.pagination-area {
+    margin-top: 50px;
+    margin-bottom: 30px;
+}
+
+.pagination-area .page-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.pagination-area .page-nav li {
+    margin: 0;
+}
+
+.pagination-area .page-nav li a.page-numbers {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    background-color: #f3f3f3;
+    color: var(--grayColor);
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 16px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+    position: relative;
+}
+
+.pagination-area .page-nav li a.page-numbers:hover {
+    background-color: var(--primaryColor);
+    color: var(--whiteColor);
+    border-color: var(--primaryColor);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.pagination-area .page-nav li a.page-numbers.active {
+    background-color: var(--primaryColor);
+    color: var(--whiteColor);
+    border-color: var(--primaryColor);
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.pagination-area .page-nav li a.page-numbers i {
+    font-size: 20px;
+    line-height: 1;
+    transition: all 0.3s ease;
+}
+
+.pagination-area .page-nav li a.page-numbers:hover i {
+    color: var(--whiteColor);
+}
+
+.pagination-area .page-nav li span.page-numbers.dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    color: var(--grayColor);
+    font-weight: 600;
+    cursor: default;
+    user-select: none;
+}
+
 /*-------------------------------
         Breadcrumb CSS
 -------------------------------*/
