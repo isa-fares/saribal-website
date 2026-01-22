@@ -108,26 +108,52 @@ if ($seciliKategoriID > 0) {
     $this->sayfaBaslik = "Ürünler - " . $this->ayarlar("title_" . $lang);
     $urunler = $this->dbLangSelect("urun", "aktif = 1 and sil = 0 and baslik <> ''", "resim" ,   "", "ORDER BY id DESC");
 }
+// ============================================
+// ÜRÜNLERİ GETİR (OPTİMİZE EDİLMİŞ)
+// ============================================
+$maxUrunLimit = "LIMIT 100"; // Maksimum 1000 ürün göster (performans için)
+
+if ($seciliKategoriID > 0) {
+    $kategoriVeri = $this->dbLangSelectRow($kategoriTable, array("id" => $seciliKategoriID, "master_id" => $seciliKategoriID));
+    
+    if (is_array($kategoriVeri)) {
+        $baslik = $this->temizle($kategoriVeri["baslik"]);
+        $this->sayfaBaslik = $this->temizle($kategoriVeri["baslik"]) . " - " . $this->ayarlar("title_" . $lang);
+        $urunler = $this->dbLangSelect("urun", "aktif = 1 and sil = 0 and baslik <> '' and kid = " . $seciliKategoriID, "resim", $maxUrunLimit, "ORDER BY id DESC");
+    } else {
+        $baslik = "Ürünler";
+        $this->sayfaBaslik = "Ürünler - " . $this->ayarlar("title_" . $lang);
+        $urunler = $this->dbLangSelect("urun", "aktif = 1 and sil = 0 and baslik <> ''", "resim", $maxUrunLimit, "ORDER BY id DESC");
+        $seciliKategoriID = 0;
+    }
+} else {
+    $baslik = "Ürünler";
+    $this->sayfaBaslik = "Ürünler - " . $this->ayarlar("title_" . $lang);
+    $urunler = $this->dbLangSelect("urun", "aktif = 1 and sil = 0 and baslik <> ''", "resim", $maxUrunLimit, "ORDER BY id DESC");
+}
 
 // ============================================
-// KATEGORİ BAŞINA ÜRÜN SAYISINI HESAPLA
+// KATEGORİ BAŞINA ÜRÜN SAYISINI HESAPLA (OPTİMİZE EDİLMİŞ - COUNT QUERY)
 // ============================================
-// Alt kategorilerin yanında gösterilecek ürün sayısını hesapla
 $kategoriUrunSayisi = array();
-$tumUrunlerSayisi = $this->dbLangSelect("urun", "aktif = 1 and sil = 0 and baslik <> ''", "resim");
+$lang = $this->pageLang;
+if ($lang == "") $lang = "tr";
 
-if (is_array($tumUrunlerSayisi)) {
-    foreach ($tumUrunlerSayisi as $urun) {
-        $urunKid = isset($urun['kid']) ? intval($urun['kid']) : 0;
-        if ($urunKid > 0) {
-            // Her kategori için ürün sayısını say
-            if (!isset($kategoriUrunSayisi[$urunKid])) {
-                $kategoriUrunSayisi[$urunKid] = 0;
-            }
-            $kategoriUrunSayisi[$urunKid]++;
-        }
+// COUNT query kullanarak çok daha hızlı hesaplama
+if ($lang != "tr") {
+    $countQuery = "SELECT kid, COUNT(*) as sayi FROM urun_lang WHERE dil = '$lang' and aktif = 1 and sil = 0 and baslik <> '' and kid > 0 GROUP BY kid";
+} else {
+    $countQuery = "SELECT kid, COUNT(*) as sayi FROM urun WHERE aktif = 1 and sil = 0 and baslik <> '' and kid > 0 GROUP BY kid";
+}
+
+$kategoriSayilari = $this->sorgu($countQuery);
+if (is_array($kategoriSayilari)) {
+    foreach ($kategoriSayilari as $sayi) {
+        $kid = intval($sayi['kid']);
+        $kategoriUrunSayisi[$kid] = intval($sayi['sayi']);
     }
 }
+
 ?>
 <div class="breadcrumb-area position-relative z-1">
     <img src="https://templates.envytheme.com/renius/default/assets/img/breadcrumb/br-line-shape.png"
